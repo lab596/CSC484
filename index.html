@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Social Sports Map - Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+  <meta name="theme-color" content="#0f1724">
+  <!-- Leaflet for map rendering (OpenStreetMap) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <div id="app" class="viewport">
+    <header class="topbar">
+      <div class="brand-row">
+        <div>
+          <div class="brand">Zephyr</div>
+          <div id="page-title" class="page-title">Map</div>
+        </div>
+        <div class="eta">5–10 min ▷</div>
+      </div>
+      <div class="top-actions">
+        <button id="btn-add-game" class="btn icon">＋</button>
+        <button id="btn-reset" class="btn small">Reset</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Map / Home -->
+      <section id="page-map" class="page active">
+        <div class="filters filters-pill">
+          <div class="pill-group">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill" data-filter="friends">Friends</button>
+            <button class="pill" data-filter="fields">Fields</button>
+            <button class="pill" data-filter="games">Games</button>
+          </div>
+          <div class="filter-extra">
+            <select id="filter-sport" aria-label="Sport filter">
+              <option value="any">All sports</option>
+              <option value="soccer">Soccer</option>
+              <option value="basketball">Basketball</option>
+              <option value="tennis">Tennis</option>
+            </select>
+            <button id="filter-more" class="btn small vbtn">V</button>
+          </div>
+        </div>
+
+        <div id="filter-panel" class="hidden filter-panel">
+          <div class="filter-row"><strong>Sport:</strong> <button class="chip">Basketball</button> <button class="chip">Soccer</button> <button class="chip">Golf</button></div>
+          <div class="filter-row"><strong>Date:</strong> <button class="chip">Today</button> <button class="chip">Fri</button> <button class="chip">Sat</button></div>
+          <div class="filter-row"><strong>Skill:</strong> <button class="chip">Beginner</button> <button class="chip">Intermediate</button></div>
+          </div>
+
+        <div id="map" class="map">
+          <!-- Simple placeholder 'map' with icons placed absolutely -->
+        </div>
+
+        <div id="game-details" class="sheet hidden" aria-hidden="true">
+          <div class="sheet-card">
+            <div class="sheet-header-row">
+              <div id="game-details-body"></div>
+              <!-- minimize/dismiss control instead of a Close button -->
+              <button id="minimize-details" class="btn small" aria-label="Minimize">▾</button>
+            </div>
+            <div class="sheet-actions">
+              <button id="reserve-game" class="btn primary">Reserve</button>
+              <button id="sheet-games" class="btn">Games</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Calendar / Games -->
+      <section id="page-games" class="page">
+        <div class="list" id="games-list"></div>
+      </section>
+
+      <!-- Social -->
+      <section id="page-social" class="page">
+        <div class="row">
+          <div>
+            <h3>Friends</h3>
+            <div id="friends-list" class="list"></div>
+          </div>
+          <div>
+            <h3>Feed</h3>
+            <div id="feed-list" class="list"></div>
+            <div class="composer">
+              <input id="feed-text" placeholder="Share an update..." />
+              <input id="feed-photo" type="file" accept="image/*" capture="camera" />
+              <button id="post-feed" class="btn primary">Post</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section id="page-stats" class="page">
+        <h3>Stats Log</h3>
+        <div id="stats-list" class="list"></div>
+        <div class="composer">
+          <select id="stats-game-select"></select>
+          <input id="stats-score" type="text" placeholder="Your score / notes" />
+          <button id="save-stats" class="btn primary">Save</button>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="bottombar">
+      <button data-page="map" class="navbtn active">Home</button>
+      <button data-page="games" class="navbtn">Games</button>
+      <button data-page="stats" class="navbtn">Stats</button>
+      <button data-page="social" class="navbtn">Social</button>
+    </nav>
+
+    <!-- Add Game Modal -->
+    <div id="modal-add" class="modal hidden" style="display:none">
+      <form id="form-add-game" class="modal-card">
+        <h2>Host a Game</h2>
+        <label>Title<input name="title" required /></label>
+        <label>Sport
+          <select name="sport">
+            <option value="soccer">Soccer</option>
+            <option value="basketball">Basketball</option>
+            <option value="tennis">Tennis</option>
+          </select>
+        </label>
+        <label>Date<input name="date" type="date" /></label>
+        <label>Skill Level
+          <select name="skill">
+            <option value="all">All</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </label>
+    <label>Address
+      <input id="add-address" name="address" type="text" placeholder="Street or place, e.g. City Park, SLO" autocomplete="off" required />
+      <div id="address-suggestions" class="suggestions hidden" role="listbox" aria-label="Address suggestions"></div>
+    </label>
+    <input type="hidden" name="lat" />
+    <input type="hidden" name="lng" />
+        <div class="modal-actions">
+          <button type="submit" class="btn primary">Add</button>
+          <!-- onclick fallback hides modal even if JS fails to attach event listeners -->
+          <button type="button" id="cancel-add" class="btn" onclick="document.getElementById('modal-add').style.display='none';document.getElementById('modal-add').classList.add('hidden')">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
