@@ -24,6 +24,57 @@ export const LS_KEYS = {
   PROFILE: 'ssma_profile'
 }
 
+// Sport icon and color mapping
+export const SPORT_COLORS: { [key: string]: string } = {
+  soccer: '#4CAF50',
+  football: '#8B4513',
+  basketball: '#FF9800',
+  baseball: '#FFC107',
+  tennis: '#E91E63',
+  volleyball: '#00BCD4',
+  badminton: '#9C27B0',
+  cricket: '#2E7D32',
+  hockey: '#01579B',
+  golf: '#558B2F',
+  running: '#D32F2F',
+  cycling: '#1976D2',
+  swimming: '#00838F',
+  boxing: '#424242',
+  yoga: '#6A1B9A',
+  pilates: '#C2185B',
+  fitness: '#F57C00',
+  climbing: '#BF360C',
+  skating: '#1A237E',
+  frisbee: '#4DD0E1',
+}
+
+export const getSportColor = (sport: string): string => {
+  return SPORT_COLORS[sport.toLowerCase()] || '#1976d2'
+}
+
+export const COMMON_SPORTS = [
+  'Badminton',
+  'Baseball',
+  'Basketball',
+  'Boxing',
+  'Climbing',
+  'Cricket',
+  'Cycling',
+  'Fitness',
+  'Football',
+  'Frisbee',
+  'Golf',
+  'Hockey',
+  'Pilates',
+  'Running',
+  'Skating',
+  'Soccer',
+  'Swimming',
+  'Tennis',
+  'Volleyball',
+  'Yoga'
+]
+
 export function read<T>(key: string, fallback: T): T {
   try {
     const v = localStorage.getItem(key)

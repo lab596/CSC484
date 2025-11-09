@@ -3,6 +3,7 @@ import { Box } from '@mui/material'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Game } from '../types'
+import { getSportColor } from '../utils'
 
 interface MapComponentProps {
   games: Game[]
@@ -94,17 +95,37 @@ export default function MapComponent({ games, selectedGameId, onSelectGame }: Ma
   )
 }
 
-// Create SVG pin with sport letter
-function createSvgPin(game: Game): string {
-  const colors: { [key: string]: string } = {
-    soccer: '#4CAF50',
-    basketball: '#FF9800',
-    tennis: '#E91E63',
-    multi: '#2196F3'
+// Sport emoji mapping
+function getSportEmoji(sport: string): string {
+  const emojiMap: { [key: string]: string } = {
+    soccer: '⚽',
+    football: '🏈',
+    basketball: '🏀',
+    baseball: '⚾',
+    tennis: '🎾',
+    volleyball: '🏐',
+    badminton: '🏸',
+    cricket: '🏏',
+    hockey: '🏒',
+    golf: '⛳',
+    running: '🏃',
+    cycling: '🚴',
+    swimming: '🏊',
+    boxing: '🥊',
+    yoga: '🧘',
+    pilates: '🤸',
+    fitness: '💪',
+    climbing: '🧗',
+    skating: '🛹',
+    frisbee: '🥏'
   }
+  return emojiMap[sport.toLowerCase()] || '⚽'
+}
 
-  const color = colors[game.sport] || '#1976d2'
-  const sportLetter = (game.sport?.[0] || 'S').toUpperCase()
+// Create SVG pin with sport emoji
+function createSvgPin(game: Game): string {
+  const color = getSportColor(game.sport)
+  const emoji = getSportEmoji(game.sport)
 
   return `
     <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
@@ -119,8 +140,8 @@ function createSvgPin(game: Game): string {
             stroke="white" 
             stroke-width="1"/>
       <circle cx="16" cy="12" r="7" fill="white" opacity="0.9"/>
-      <text x="16" y="15" text-anchor="middle" font-size="12" font-weight="bold" fill="${color}">
-        ${sportLetter}
+      <text x="16" y="15" text-anchor="middle" font-size="14" dominant-baseline="middle">
+        ${emoji}
       </text>
     </svg>
   `

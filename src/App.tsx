@@ -64,16 +64,22 @@ function AppContent() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
-      {/* Top Navigation */}
-      <Paper sx={{ display: 'flex', gap: 2, p: 2, borderBottom: '1px solid #e0e0e0' }} elevation={0}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh' }}>
+      {/* Main Content */}
+      <Box sx={{ flex: 1, overflow: 'auto', p: 0 }}>
+        {renderPage()}
+      </Box>
+
+      {/* Bottom Navigation */}
+      <Paper sx={{ borderTop: '1px solid #e0e0e0' }} elevation={3}>
         <BottomNavigation
           value={currentPage}
           onChange={(e, value) => setCurrentPage(value as PageType)}
           showLabels={false}
           sx={{ 
-            width: 'auto',
-            backgroundColor: 'transparent'
+            display: 'flex',
+            justifyContent: 'center',
+            backgroundColor: '#fff'
           }}
         >
           <BottomNavigationAction label="Map" value="map" icon={<HomeIcon />} />
@@ -82,11 +88,6 @@ function AppContent() {
           <BottomNavigationAction label="Friends" value="social" icon={<PeopleIcon />} />
         </BottomNavigation>
       </Paper>
-
-      {/* Main Content */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 0 }}>
-        {renderPage()}
-      </Box>
     </Box>
   )
 }

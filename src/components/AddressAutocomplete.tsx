@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import {
   TextField,
   Box,
@@ -7,7 +7,8 @@ import {
   ListItemButton,
   ListItemText,
   CircularProgress,
-  Typography
+  Typography,
+  Portal
 } from '@mui/material'
 import { fetchAddressSuggestions, AddressSuggestion } from '../utils'
 
@@ -38,6 +39,8 @@ export default function AddressAutocomplete({
   const [loading, setLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
+  const textFieldRef = useRef<HTMLDivElement>(null)
 
   const fetchSuggestions = useCallback(
     debounce(async (query: string) => {
@@ -66,6 +69,16 @@ export default function AddressAutocomplete({
     const newValue = e.target.value
     onChange(newValue)
     fetchSuggestions(newValue)
+    
+    // Update position for dropdown
+    if (textFieldRef.current) {
+      const rect = textFieldRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      })
+    }
   }
 
   const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
@@ -106,56 +119,61 @@ export default function AddressAutocomplete({
   }
 
   return (
-    <Box sx={{ position: 'relative' }}>
-      <TextField
-        fullWidth
-        label="Address"
-        value={value}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder="e.g., City Park, SLO"
-        autoComplete="off"
-      />
+    <>
+      <Box ref={textFieldRef} sx={{ position: 'relative' }}>
+        <TextField
+          fullWidth
+          label="Address"
+          value={value}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder="e.g., City Park, SLO"
+          autoComplete="off"
+        />
+      </Box>
 
       {showSuggestions && suggestions.length > 0 && (
-        <Paper
-          sx={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            maxHeight: 200,
-            overflow: 'auto',
-            mt: 0.5
-          }}
-        >
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <List>
-              {suggestions.map((suggestion, idx) => (
-                <ListItemButton
-                  key={idx}
-                  selected={activeIndex === idx}
-                  onClick={() => handleSelectSuggestion(suggestion)}
-                >
-                  <ListItemText
-                    primary={suggestion.display}
-                    secondary={
-                      <Typography variant="caption" color="textSecondary">
-                        {suggestion.source === 'local' ? 'Local' : 'OpenStreetMap'}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
-        </Paper>
+        <Portal>
+          <Paper
+            sx={{
+              position: 'fixed',
+              top: `${position.top + 8}px`,
+              left: `${position.left}px`,
+              width: `${position.width}px`,
+              zIndex: 9999,
+              maxHeight: 300,
+              overflow: 'auto',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+            }}
+          >
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <List sx={{ py: 0 }}>
+                {suggestions.map((suggestion, idx) => (
+                  <ListItemButton
+                    key={idx}
+                    selected={activeIndex === idx}
+                    onClick={() => handleSelectSuggestion(suggestion)}
+                    sx={{ py: 1, px: 2 }}
+                  >
+                    <ListItemText
+                      primary={suggestion.display}
+                      secondary={
+                        <Typography variant="caption" color="textSecondary">
+                          {suggestion.source === 'local' ? 'Local' : 'OpenStreetMap'}
+                        </Typography>
+                      }
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            )}
+          </Paper>
+        </Portal>
       )}
-    </Box>
+    </>
   )
 }

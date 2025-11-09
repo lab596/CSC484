@@ -8,11 +8,12 @@ import {
   MenuItem,
   Button,
   Box,
-  Stack
+  Stack,
+  Autocomplete
 } from '@mui/material'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
-import { geocodeAddress, todayOffset } from '../utils'
+import { geocodeAddress, todayOffset, COMMON_SPORTS } from '../utils'
 import AddressAutocomplete from './AddressAutocomplete'
 
 interface AddGameModalProps {
@@ -22,8 +23,9 @@ interface AddGameModalProps {
 
 export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   const { addGame, profile } = useApp()
+  const [itemType, setItemType] = useState<'game' | 'field'>('game')
   const [title, setTitle] = useState('')
-  const [sport, setSport] = useState('soccer')
+  const [sport, setSport] = useState('')
   const [date, setDate] = useState(todayOffset(0))
   const [skill, setSkill] = useState('intermediate')
   const [address, setAddress] = useState('')
@@ -37,8 +39,9 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   }
 
   const handleClose = () => {
+    setItemType('game')
     setTitle('')
-    setSport('soccer')
+    setSport('')
     setDate(todayOffset(0))
     setSkill('intermediate')
     setAddress('')
@@ -48,8 +51,14 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   }
 
   const handleSubmit = async () => {
-    if (!title || !address) {
+    if (!title || !address || !sport) {
       alert('Please fill in all required fields')
+      return
+    }
+
+    // For fields, date and skill are optional
+    if (itemType === 'game' && !date) {
+      alert('Please select a date for the game')
       return
     }
 
@@ -76,12 +85,12 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
         address,
         lat,
         lng,
-        date,
-        skill,
+        date: itemType === 'game' ? date : undefined,
+        skill: itemType === 'game' ? skill : undefined,
         host: profile?.name || 'You',
-        type: 'game',
-        attendees: 1,
-        reservedByMe: false
+        type: itemType,
+        attendees: itemType === 'game' ? 1 : 0,
+        reservedByMe: itemType === 'game'
       }
 
       addGame(newGame)
@@ -96,51 +105,69 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add Game</DialogTitle>
+      <DialogTitle>Add {itemType === 'game' ? 'Game' : 'Field'}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
           <TextField
+            select
             fullWidth
-            label="Game Title"
+            label="Type"
+            value={itemType}
+            onChange={(e) => setItemType(e.target.value as 'game' | 'field')}
+          >
+            <MenuItem value="game">Game</MenuItem>
+            <MenuItem value="field">Field/Venue</MenuItem>
+          </TextField>
+
+          <TextField
+            fullWidth
+            label={itemType === 'game' ? 'Game Title' : 'Field Name'}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Pickup Soccer at City Park"
+            placeholder={itemType === 'game' ? 'e.g., Pickup Soccer at City Park' : 'e.g., Downtown Basketball Court'}
           />
 
-          <TextField
-            select
-            fullWidth
-            label="Sport"
-            value={sport}
-            onChange={(e) => setSport(e.target.value)}
-          >
-            <MenuItem value="soccer">Soccer</MenuItem>
-            <MenuItem value="basketball">Basketball</MenuItem>
-            <MenuItem value="tennis">Tennis</MenuItem>
-            <MenuItem value="multi">Multi-Sport</MenuItem>
-          </TextField>
-
-          <TextField
-            type="date"
-            fullWidth
-            label="Date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+          <Autocomplete
+            freeSolo
+            options={COMMON_SPORTS}
+            value={sport || ''}
+            onChange={(e, value) => setSport(value || '')}
+            onInputChange={(e, value) => setSport(value)}
+            inputValue={sport}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Sport"
+                placeholder="e.g., Soccer, Basketball, Custom Sport..."
+              />
+            )}
           />
 
-          <TextField
-            select
-            fullWidth
-            label="Skill Level"
-            value={skill}
-            onChange={(e) => setSkill(e.target.value)}
-          >
-            <MenuItem value="beginner">Beginner</MenuItem>
-            <MenuItem value="intermediate">Intermediate</MenuItem>
-            <MenuItem value="advanced">Advanced</MenuItem>
-            <MenuItem value="all">All Levels</MenuItem>
-          </TextField>
+          {itemType === 'game' && (
+            <>
+              <TextField
+                type="date"
+                fullWidth
+                label="Date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                select
+                fullWidth
+                label="Skill Level"
+                value={skill}
+                onChange={(e) => setSkill(e.target.value)}
+              >
+                <MenuItem value="beginner">Beginner</MenuItem>
+                <MenuItem value="intermediate">Intermediate</MenuItem>
+                <MenuItem value="advanced">Advanced</MenuItem>
+                <MenuItem value="all">All Levels</MenuItem>
+              </TextField>
+            </>
+          )}
 
           <AddressAutocomplete
             value={address}
@@ -156,9 +183,9 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
         <Button 
           onClick={handleSubmit} 
           variant="contained" 
-          disabled={!title || !address || loading}
+          disabled={!title || !address || !sport || loading}
         >
-          {loading ? 'Creating...' : 'Create Game'}
+          {loading ? 'Creating...' : `Create ${itemType === 'game' ? 'Game' : 'Field'}`}
         </Button>
       </DialogActions>
     </Dialog>

@@ -7,6 +7,7 @@ interface AppContextType {
   setGames: (games: Game[]) => void
   addGame: (game: Game) => void
   updateGame: (id: string, updates: Partial<Game>) => void
+  deleteGame: (id: string) => void
   
   friends: Friend[]
   setFriends: (friends: Friend[]) => void
@@ -106,6 +107,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const deleteGame = (id: string) => {
+    setGames((prev) => prev.filter((g) => g.id !== id))
+  }
+
   const addFriend = (friend: Friend) => {
     setFriends((prev) => [...prev, friend])
   }
@@ -123,6 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setGames,
     addGame,
     updateGame,
+    deleteGame,
     friends,
     setFriends,
     addFriend,

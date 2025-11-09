@@ -1,19 +1,22 @@
 import React, { useState } from 'react'
 import {
-  Drawer,
   Box,
   Typography,
   Button,
   Chip,
   Stack,
   Divider,
-  Paper
+  Paper,
+  IconButton
 } from '@mui/material'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import EventIcon from '@mui/icons-material/Event'
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter'
 import PersonIcon from '@mui/icons-material/Person'
 import GroupIcon from '@mui/icons-material/Group'
+import CloseIcon from '@mui/icons-material/Close'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Game } from '../types'
 import { useApp } from '../context/AppContext'
 
@@ -34,16 +37,19 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
   }
 
   return (
-    <Drawer
-      anchor="bottom"
-      open={true}
-      onClose={onClose}
+    <Paper
       sx={{
+        position: 'fixed',
+        bottom: 80,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '90%',
+        maxWidth: 450,
         zIndex: 999,
-        '& .MuiDrawer-paper': {
-          maxHeight: isMinimized ? 60 : '70vh',
-          transition: 'max-height 0.3s ease-in-out'
-        }
+        maxHeight: isMinimized ? 60 : '70vh',
+        overflow: isMinimized ? 'hidden' : 'auto',
+        transition: 'max-height 0.3s ease-in-out',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)'
       }}
     >
       <Box
@@ -51,31 +57,34 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          p: 2,
-          overflow: 'auto'
+          p: 2
         }}
       >
-        {/* Header with minimize button */}
+        {/* Header with icon buttons */}
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 2
+            mb: isMinimized ? 0 : 2
           }}
         >
-          <Typography variant="h6">{game.title}</Typography>
-          <Stack direction="row" gap={1}>
-            <Button
+          <Typography variant="h6" sx={{ flex: 1 }}>{game.title}</Typography>
+          <Stack direction="row" gap={0.5}>
+            <IconButton
               size="small"
               onClick={() => setIsMinimized(!isMinimized)}
-              variant="outlined"
+              sx={{ color: '#1976d2' }}
             >
-              {isMinimized ? 'Expand' : 'Minimize'}
-            </Button>
-            <Button size="small" onClick={onClose} variant="text">
-              Close
-            </Button>
+              {isMinimized ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={onClose}
+              sx={{ color: '#d32f2f' }}
+            >
+              <CloseIcon />
+            </IconButton>
           </Stack>
         </Box>
 
@@ -163,6 +172,6 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
           </>
         )}
       </Box>
-    </Drawer>
+    </Paper>
   )
 }
