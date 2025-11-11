@@ -7,7 +7,10 @@ import {
   Stack,
   Divider,
   Paper,
-  IconButton
+  IconButton,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import EventIcon from '@mui/icons-material/Event'
@@ -17,8 +20,10 @@ import GroupIcon from '@mui/icons-material/Group'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Game } from '../types'
 import { useApp } from '../context/AppContext'
+import FieldReservationModal from './FieldReservationModal'
 
 interface BottomSheetDetailsProps {
   game: Game
@@ -26,8 +31,9 @@ interface BottomSheetDetailsProps {
 }
 
 export default function BottomSheetDetails({ game, onClose }: BottomSheetDetailsProps) {
-  const { updateGame } = useApp()
+  const { updateGame, profile } = useApp()
   const [isMinimized, setIsMinimized] = useState(false)
+  const [showReservationModal, setShowReservationModal] = useState(false)
 
   const handleReserve = () => {
     updateGame(game.id, {
@@ -35,6 +41,9 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
       attendees: game.attendees + (game.reservedByMe ? -1 : 1)
     })
   }
+
+  const isField = game.type === 'field'
+  const hasUserReserved = game.reservations?.some(res => res.userName === (profile?.name || '')) || false
 
   return (
     <Paper
@@ -158,20 +167,73 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
 
             <Divider sx={{ my: 2 }} />
 
+            {/* Show Reservations for Fields */}
+            {isField && game.reservations && game.reservations.length > 0 && (
+              <>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Reservations
+                </Typography>
+                <List sx={{ mb: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
+                  {game.reservations.map(res => (
+                    <ListItem key={res.id} dense>
+                      <ListItemText
+                        primary={`${res.date} at ${res.time}`}
+                        secondary={`${res.userName}${res.notes ? ` - ${res.notes}` : ''}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+                <Divider sx={{ my: 2 }} />
+              </>
+            )}
+
             {/* Action Buttons */}
-            <Stack direction="row" gap={1}>
-              <Button
-                variant="contained"
-                color={game.reservedByMe ? 'error' : 'success'}
-                fullWidth
-                onClick={handleReserve}
-              >
-                {game.reservedByMe ? 'Cancel Reservation' : 'Reserve Spot'}
-              </Button>
-            </Stack>
+            {isField ? (
+              <Stack direction="row" gap={1}>
+                {hasUserReserved ? (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    fullWidth
+                    onClick={() => setShowReservationModal(true)}
+                  >
+                    ✓ Reserved - Edit
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    onClick={() => setShowReservationModal(true)}
+                  >
+                    Reserve Time
+                  </Button>
+                )}
+              </Stack>
+            ) : (
+              <Stack direction="row" gap={1}>
+                <Button
+                  variant="contained"
+                  color={game.reservedByMe ? 'error' : 'success'}
+                  fullWidth
+                  onClick={handleReserve}
+                >
+                  {game.reservedByMe ? 'Cancel Reservation' : 'Reserve Spot'}
+                </Button>
+              </Stack>
+            )}
           </>
         )}
       </Box>
+
+      {/* Field Reservation Modal */}
+      {isField && (
+        <FieldReservationModal
+          open={showReservationModal}
+          onClose={() => setShowReservationModal(false)}
+          field={game}
+        />
+      )}
     </Paper>
   )
 }

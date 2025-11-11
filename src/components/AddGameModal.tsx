@@ -9,7 +9,9 @@ import {
   Button,
   Box,
   Stack,
-  Autocomplete
+  Autocomplete,
+  Snackbar,
+  Alert
 } from '@mui/material'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
@@ -32,10 +34,13 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   const [selectedLat, setSelectedLat] = useState<number | null>(null)
   const [selectedLng, setSelectedLng] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   const handleAddressSelect = (lat: number, lng: number) => {
     setSelectedLat(lat)
     setSelectedLng(lng)
+    setIsDirty(true)
   }
 
   const handleClose = () => {
@@ -47,18 +52,23 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
     setAddress('')
     setSelectedLat(null)
     setSelectedLng(null)
+    setIsDirty(false)
     onClose()
+  }
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type })
   }
 
   const handleSubmit = async () => {
     if (!title || !address || !sport) {
-      alert('Please fill in all required fields')
+      showToast('Please fill in all required fields', 'error')
       return
     }
 
     // For fields, date and skill are optional
     if (itemType === 'game' && !date) {
-      alert('Please select a date for the game')
+      showToast('Please select a date for the game', 'error')
       return
     }
 
@@ -70,7 +80,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
       if (!lat || !lng) {
         const pos = await geocodeAddress(address)
         if (!pos) {
-          alert('Could not resolve address. Try a different address.')
+          showToast('Could not resolve address. Try a different address.', 'error')
           setLoading(false)
           return
         }
@@ -94,100 +104,140 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
       }
 
       addGame(newGame)
+      showToast(`${itemType === 'game' ? 'Game' : 'Field'} created successfully!`, 'success')
       handleClose()
     } catch (error) {
       console.error('Error creating game:', error)
-      alert('Error creating game. Please try again.')
+      showToast('Error creating game. Please try again.', 'error')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Add {itemType === 'game' ? 'Game' : 'Field'}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-          <TextField
-            select
-            fullWidth
-            label="Type"
-            value={itemType}
-            onChange={(e) => setItemType(e.target.value as 'game' | 'field')}
-          >
-            <MenuItem value="game">Game</MenuItem>
-            <MenuItem value="field">Field/Venue</MenuItem>
-          </TextField>
+    <>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+        <DialogTitle>Create {itemType === 'game' ? 'Game' : 'Field'}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              select
+              fullWidth
+              label="Type"
+              value={itemType}
+              onChange={(e) => {
+                setItemType(e.target.value as 'game' | 'field')
+                setIsDirty(true)
+              }}
+            >
+              <MenuItem value="game">Game</MenuItem>
+              <MenuItem value="field">Field/Venue</MenuItem>
+            </TextField>
 
-          <TextField
-            fullWidth
-            label={itemType === 'game' ? 'Game Title' : 'Field Name'}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={itemType === 'game' ? 'e.g., Pickup Soccer at City Park' : 'e.g., Downtown Basketball Court'}
-          />
+            <TextField
+              fullWidth
+              label={itemType === 'game' ? 'Game Title' : 'Field Name'}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setIsDirty(true)
+              }}
+              placeholder={itemType === 'game' ? 'e.g., Pickup Soccer at City Park' : 'e.g., Downtown Basketball Court'}
+            />
 
-          <Autocomplete
-            freeSolo
-            options={COMMON_SPORTS}
-            value={sport || ''}
-            onChange={(e, value) => setSport(value || '')}
-            onInputChange={(e, value) => setSport(value)}
-            inputValue={sport}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Sport"
-                placeholder="e.g., Soccer, Basketball, Custom Sport..."
-              />
+            <Autocomplete
+              freeSolo
+              options={COMMON_SPORTS}
+              value={sport || ''}
+              onChange={(e, value) => {
+                setSport(value || '')
+                setIsDirty(true)
+              }}
+              onInputChange={(e, value) => {
+                setSport(value)
+                setIsDirty(true)
+              }}
+              inputValue={sport}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Sport"
+                  placeholder="e.g., Soccer, Basketball, Custom Sport..."
+                />
+              )}
+            />
+
+            {itemType === 'game' && (
+              <>
+                <TextField
+                  type="date"
+                  fullWidth
+                  label="Date"
+                  value={date}
+                  onChange={(e) => {
+                    setDate(e.target.value)
+                    setIsDirty(true)
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  select
+                  fullWidth
+                  label="Skill Level"
+                  value={skill}
+                  onChange={(e) => {
+                    setSkill(e.target.value)
+                    setIsDirty(true)
+                  }}
+                >
+                  <MenuItem value="beginner">Beginner</MenuItem>
+                  <MenuItem value="intermediate">Intermediate</MenuItem>
+                  <MenuItem value="advanced">Advanced</MenuItem>
+                  <MenuItem value="all">All Levels</MenuItem>
+                </TextField>
+              </>
             )}
-          />
 
-          {itemType === 'game' && (
-            <>
-              <TextField
-                type="date"
-                fullWidth
-                label="Date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
+            <AddressAutocomplete
+              value={address}
+              onChange={(newAddress: string) => {
+                setAddress(newAddress)
+                setIsDirty(true)
+              }}
+              onSelect={handleAddressSelect}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            variant="contained" 
+            disabled={!title || !address || !sport || loading}
+          >
+            {loading ? 'Creating...' : `Create ${itemType === 'game' ? 'Game' : 'Field'}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-              <TextField
-                select
-                fullWidth
-                label="Skill Level"
-                value={skill}
-                onChange={(e) => setSkill(e.target.value)}
-              >
-                <MenuItem value="beginner">Beginner</MenuItem>
-                <MenuItem value="intermediate">Intermediate</MenuItem>
-                <MenuItem value="advanced">Advanced</MenuItem>
-                <MenuItem value="all">All Levels</MenuItem>
-              </TextField>
-            </>
-          )}
-
-          <AddressAutocomplete
-            value={address}
-            onChange={setAddress}
-            onSelect={handleAddressSelect}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
-          disabled={!title || !address || !sport || loading}
+      {/* Toast Notification */}
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={6000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setToast(null)} 
+          severity={toast?.type || 'info'}
+          sx={{ width: '100%' }}
         >
-          {loading ? 'Creating...' : `Create ${itemType === 'game' ? 'Game' : 'Field'}`}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          {toast?.message}
+        </Alert>
+      </Snackbar>
+    </>
   )
 }

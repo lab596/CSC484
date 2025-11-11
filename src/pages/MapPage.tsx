@@ -30,11 +30,21 @@ export default function MapPage() {
       if (filters.type !== 'all') {
         if (filters.type === 'games' && game.type !== 'game') return false
         if (filters.type === 'fields' && game.type !== 'field') return false
+        if (filters.type === 'friends') {
+          const hostName = game.host || ''
+          if (!friends.some(f => f.name === hostName)) {
+            return false
+          }
+        }
       }
 
-      // Sports filter
-      if (filters.sports.length > 0 && !filters.sports.includes(game.sport)) {
-        return false
+      // Sports filter (case-insensitive)
+      if (filters.sports.length > 0) {
+        const gameSport = game.sport?.toLowerCase() || ''
+        const matchesSport = filters.sports.some(s => s.toLowerCase() === gameSport)
+        if (!matchesSport) {
+          return false
+        }
       }
 
       // Friends only filter
@@ -45,8 +55,8 @@ export default function MapPage() {
         }
       }
 
-      // Specific friends filter
-      if (filters.selectedFriendFilters.size > 0) {
+      // Specific friends filter (when not using friendsOnly toggle)
+      if (filters.selectedFriendFilters.size > 0 && !filters.friendsOnly) {
         const hostName = game.host || ''
         if (!filters.selectedFriendFilters.has(hostName)) {
           return false
@@ -81,7 +91,7 @@ export default function MapPage() {
         friendNames={friendNames}
       />
 
-      {/* Add Game Button - Top Right */}
+      {/* Add Activity Button - Top Right */}
       <Box
         sx={{
           position: 'absolute',
@@ -98,11 +108,11 @@ export default function MapPage() {
           onClick={() => setOpenAddModal(true)}
           sx={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
         >
-          Add Game
+          Add Activity
         </Button>
       </Box>
 
-      {/* Add Game Modal */}
+      {/* Add Activity Modal */}
       <AddGameModal 
         open={openAddModal}
         onClose={() => setOpenAddModal(false)}
