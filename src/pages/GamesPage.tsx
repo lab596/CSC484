@@ -59,9 +59,9 @@ export default function GamesPage() {
     [games, profile?.name]
   )
 
-  // Games I'm attending (reserved by me or just showing upcoming games I didn't create)
+  // Games I'm attending (either reserved by me, or hosted by someone else)
   const attendingGames = useMemo(
-    () => games.filter(g => g.host !== profile?.name),
+    () => games.filter(g => g.reservedByMe || g.host !== profile?.name),
     [games, profile?.name]
   )
 
