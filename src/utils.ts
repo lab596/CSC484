@@ -52,6 +52,23 @@ export const getSportColor = (sport: string): string => {
   return SPORT_COLORS[sport.toLowerCase()] || '#1976d2'
 }
 
+// Create sport icon SVG with colored circle and letter initial
+export const getSportIconSVG = (sport: string): string => {
+  const color = getSportColor(sport)
+  const letter = sport.charAt(0).toUpperCase()
+  
+  return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background circle -->
+    <circle cx="12" cy="12" r="10" fill="${color}" opacity="0.9"/>
+    <!-- Border circle -->
+    <circle cx="12" cy="12" r="10" fill="none" stroke="${color}" stroke-width="0.5" opacity="0.3"/>
+    <!-- Letter -->
+    <text x="12" y="15" font-size="11" font-weight="bold" text-anchor="middle" fill="white" font-family="Arial, sans-serif">
+      ${letter}
+    </text>
+  </svg>`
+}
+
 export const COMMON_SPORTS = [
   'Badminton',
   'Baseball',

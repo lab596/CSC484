@@ -75,13 +75,42 @@ export default function GamesPage() {
       }
       grouped[date].push(game)
     })
+    
+    // Add field reservations to the calendar
+    games.forEach(field => {
+      if (field.type === 'field' && field.reservations) {
+        field.reservations.forEach(res => {
+          if (res.userName === profile?.name) {
+            if (!grouped[res.date]) {
+              grouped[res.date] = []
+            }
+            // Create a reservation entry that looks like a game
+            const reservationEntry: Game = {
+              id: res.id,
+              title: `${field.title} at ${res.time}`,
+              sport: field.sport,
+              address: field.address,
+              lat: field.lat,
+              lng: field.lng,
+              date: res.date,
+              host: field.host,
+              type: 'field',
+              attendees: 1,
+              reservedByMe: true
+            }
+            grouped[res.date].push(reservationEntry)
+          }
+        })
+      }
+    })
+    
     // Sort by date
     return Object.entries(grouped).sort((a, b) => {
       if (a[0] === 'No Date') return 1
       if (b[0] === 'No Date') return -1
       return a[0].localeCompare(b[0])
     })
-  }, [attendingGames])
+  }, [attendingGames, games, profile?.name])
 
   const handleDeleteClick = (game: Game) => {
     setGameToDelete(game)

@@ -14,6 +14,17 @@ export interface Game {
   attendees: number
   friendHost?: boolean
   reservedByMe?: boolean
+  // Field reservations - when a user reserves a time on a field
+  reservations?: FieldReservation[]
+}
+
+export interface FieldReservation {
+  id: string
+  userId: string
+  userName: string
+  date: string
+  time: string
+  notes?: string
 }
 
 export interface Friend {

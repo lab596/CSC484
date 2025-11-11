@@ -68,7 +68,22 @@ export default function FilterPanel({
   }
 
   const handleFriendsOnlyToggle = () => {
-    onFiltersChange({ ...filters, friendsOnly: !filters.friendsOnly })
+    const newFriendsOnly = !filters.friendsOnly
+    let newSelectedFriends = filters.selectedFriendFilters
+    
+    // If turning ON friends-only, add all friends to selected filter
+    if (newFriendsOnly) {
+      newSelectedFriends = new Set(friendNames)
+    } else {
+      // If turning OFF, clear specific friend selections
+      newSelectedFriends = new Set()
+    }
+    
+    onFiltersChange({ 
+      ...filters, 
+      friendsOnly: newFriendsOnly,
+      selectedFriendFilters: newSelectedFriends
+    })
   }
 
   const hasAdvancedFilters = filters.sports.length > 0 || filters.friendsOnly || filters.selectedFriendFilters.size > 0
@@ -184,21 +199,21 @@ export default function FilterPanel({
         </IconButton>
       </Box>
 
-      {/* Advanced Filters Popover */}
+      {/* Advanced Filters Popover - Horizontal Layout */}
       <Popover
         open={advancedOpen}
         anchorEl={advancedAnchor}
         onClose={handleAdvancedClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2, minWidth: 280, maxHeight: 400, overflow: 'auto' }}>
+        <Box sx={{ p: 2, minWidth: 600, display: 'flex', gap: 3 }}>
           {/* Sports Filter */}
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
               Sports
             </Typography>
-            <Stack gap={0.5} sx={{ maxHeight: 200, overflow: 'auto' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.5, maxHeight: 250, overflow: 'auto' }}>
               {COMMON_SPORTS.map(sport => (
                 <FormControlLabel
                   key={sport}
@@ -210,15 +225,14 @@ export default function FilterPanel({
                     />
                   }
                   label={<Typography variant="body2">{sport}</Typography>}
+                  sx={{ m: 0 }}
                 />
               ))}
-            </Stack>
+            </Box>
           </Box>
 
-          <Divider sx={{ my: 1.5 }} />
-
           {/* Friends Filter */}
-          <Box>
+          <Box sx={{ flex: 1, minWidth: 200 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
               Friends
             </Typography>
@@ -235,7 +249,7 @@ export default function FilterPanel({
               />
 
               {friendNames.length > 0 && (
-                <Box sx={{ pl: 2 }}>
+                <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
                   <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'textSecondary', display: 'block', mb: 1 }}>
                     Specific friends:
                   </Typography>
@@ -251,6 +265,7 @@ export default function FilterPanel({
                           />
                         }
                         label={<Typography variant="body2">{friend}</Typography>}
+                        sx={{ m: 0 }}
                       />
                     ))}
                   </Stack>
