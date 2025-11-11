@@ -34,8 +34,22 @@ export interface Stats {
   id: string
   gameId: string
   gameTitle: string
+  sport?: string
+  result?: 'W' | 'L' | 'D'
+  performanceRating?: number
   note: string
   time: number
+  rebounds?: number
+  threePointers?: number
+  saves?: number
+  opponent?: string
+  venueType?: 'Home' | 'Away' | 'Neutral'
+  minutesPlayed?: number
+  position?: string
+  energyLevel?: number
+  mood?: 'Great' | 'Good' | 'Okay' | 'Tired' | 'Injured'
+  weather?: string
+  extraMetrics?: Record<string, string | number>
 }
 
 export interface Profile {
