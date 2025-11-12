@@ -31,6 +31,7 @@ interface AppContextType {
   stats: Stats[];
   setStats: (stats: Stats[]) => void;
   addStat: (stat: Stats) => void;
+  deleteStat: (id: string) => void;
   joinGame: (gameId: string) => void;
 
   joinedGames: string[];
@@ -265,6 +266,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const deleteStat = (id: string) => {
+    setStats((prev) => prev.filter((s) => s.id !== id));
+  };
+
   const joinGame = (gameId: string) => {
     // Check if already joined this game
     if (joinedGames.includes(gameId)) {
@@ -306,6 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     stats,
     setStats,
     addStat,
+    deleteStat,
     joinGame,
     joinedGames,
     setJoinedGames,
