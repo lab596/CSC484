@@ -140,7 +140,7 @@ function createSvgPin(game: Game): string {
             stroke="white" 
             stroke-width="1"/>
       <circle cx="16" cy="12" r="7" fill="white" opacity="0.9"/>
-      <text x="16" y="15" text-anchor="middle" font-size="14" dominant-baseline="middle">
+      <text x="16" y="13" text-anchor="middle" font-size="16" dominant-baseline="middle">
         ${emoji}
       </text>
     </svg>

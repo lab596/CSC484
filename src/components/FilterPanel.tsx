@@ -112,6 +112,8 @@ export default function FilterPanel({
             borderRadius: 0,
             px: 2,
             height: '100%',
+            display: 'flex',
+            alignItems: 'center',
             fontWeight: filters.type === 'all' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
@@ -128,6 +130,8 @@ export default function FilterPanel({
             borderRadius: 0,
             px: 2,
             height: '100%',
+            display: 'flex',
+            alignItems: 'center',
             fontWeight: filters.type === 'games' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
@@ -144,6 +148,8 @@ export default function FilterPanel({
             borderRadius: 0,
             px: 2,
             height: '100%',
+            display: 'flex',
+            alignItems: 'center',
             fontWeight: filters.type === 'fields' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
@@ -160,6 +166,8 @@ export default function FilterPanel({
             borderRadius: 0,
             px: 2,
             height: '100%',
+            display: 'flex',
+            alignItems: 'center',
             fontWeight: filters.type === 'friends' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
@@ -168,7 +176,7 @@ export default function FilterPanel({
         </Button>
 
         {/* Divider */}
-        <Divider orientation="vertical" sx={{ height: '60%', my: 'auto' }} />
+        <Divider orientation="vertical" sx={{ height: '100%' }} />
 
         {/* Advanced Filter Button */}
         <IconButton
@@ -178,6 +186,9 @@ export default function FilterPanel({
             borderRadius: 0,
             px: 1.5,
             height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             color: hasAdvancedFilters ? '#1976d2' : 'inherit'
           }}
           title="Advanced filters"

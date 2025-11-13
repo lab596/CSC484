@@ -46,6 +46,12 @@ export const getSportColor = (sport: string): string => {
   return SPORT_COLORS[sport.toLowerCase()] || "#1976d2";
 };
 
+// Capitalize the first letter of a string
+export const capitalize = (str: string): string => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
 // Create sport icon SVG with colored circle and letter initial
 export const getSportIconSVG = (sport: string): string => {
   const color = getSportColor(sport);
@@ -223,8 +229,9 @@ export const SAMPLE_GAMES: Game[] = [
     lat: ADDRESS_LOOKUP["city park"].lat,
     lng: ADDRESS_LOOKUP["city park"].lng,
     date: todayOffset(0),
+    time: "14:00",
     host: "alex",
-    skill: "intermediate",
+    skill: "Intermediate",
     type: "game",
     attendees: 5,
   },
@@ -236,6 +243,7 @@ export const SAMPLE_GAMES: Game[] = [
     lat: ADDRESS_LOOKUP["spike arena"].lat,
     lng: ADDRESS_LOOKUP["spike arena"].lng,
     date: todayOffset(0),
+    time: "18:30",
     host: "maria",
     skill: "all",
     type: "game",
@@ -250,6 +258,7 @@ export const SAMPLE_GAMES: Game[] = [
     lat: ADDRESS_LOOKUP["dana adobe"].lat,
     lng: ADDRESS_LOOKUP["dana adobe"].lng,
     date: todayOffset(1),
+    time: "10:00",
     host: "Jam",
     skill: "beginner",
     type: "game",
