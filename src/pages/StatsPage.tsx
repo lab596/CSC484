@@ -143,6 +143,9 @@ const METRIC_LABELS: Record<string, string> = {
 
 const SPORT_METRICS: Record<string, MetricDefinition[]> = {
   basketball: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'minutesPlayed', label: 'Minutes Played', type: 'number', min: 0 },
+    { id: 'positionPlayed', label: 'Position / Role', type: 'text' },
     { id: 'points', label: 'Points', type: 'number', min: 0 },
     { id: 'rebounds', label: 'Rebounds', type: 'number', min: 0 },
     { id: 'assists', label: 'Assists', type: 'number', min: 0 },
@@ -156,6 +159,9 @@ const SPORT_METRICS: Record<string, MetricDefinition[]> = {
     { id: 'plusMinus', label: 'Plus/Minus', type: 'number' }
   ],
   soccer: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'minutesPlayed', label: 'Minutes Played', type: 'number', min: 0 },
+    { id: 'positionPlayed', label: 'Position / Role', type: 'text' },
     { id: 'goals', label: 'Goals', type: 'number', min: 0 },
     { id: 'soccerAssists', label: 'Assists', type: 'number', min: 0 },
     { id: 'shotsOnTarget', label: 'Shots on Target', type: 'number', min: 0 },
@@ -176,6 +182,7 @@ const SPORT_METRICS: Record<string, MetricDefinition[]> = {
     }
   ],
   tennis: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
     { id: 'setsWon', label: 'Sets Won', type: 'number', min: 0 },
     { id: 'setsLost', label: 'Sets Lost', type: 'number', min: 0 },
     { id: 'aces', label: 'Aces', type: 'number', min: 0 },
@@ -187,6 +194,8 @@ const SPORT_METRICS: Record<string, MetricDefinition[]> = {
     { id: 'firstServePct', label: 'First Serve Percentage', type: 'number', min: 0, max: 100 }
   ],
   baseball: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'positionPlayed', label: 'Position / Role', type: 'text' },
     { id: 'hits', label: 'Hits', type: 'number', min: 0 },
     { id: 'runs', label: 'Runs', type: 'number', min: 0 },
     { id: 'rbis', label: 'RBIs', type: 'number', min: 0 },
@@ -204,12 +213,121 @@ const SPORT_METRICS: Record<string, MetricDefinition[]> = {
     { id: 'elevationGain', label: 'Elevation Gain (meters)', type: 'number', min: 0 }
   ],
   volleyball: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'minutesPlayed', label: 'Minutes Played', type: 'number', min: 0 },
+    { id: 'positionPlayed', label: 'Position / Role', type: 'text' },
     { id: 'kills', label: 'Kills', type: 'number', min: 0 },
     { id: 'digs', label: 'Digs', type: 'number', min: 0 },
     { id: 'volleyballBlocks', label: 'Blocks', type: 'number', min: 0 },
     { id: 'acesServe', label: 'Aces', type: 'number', min: 0 },
     { id: 'volleyballAssists', label: 'Assists', type: 'number', min: 0 },
     { id: 'receptionErrors', label: 'Reception Errors', type: 'number', min: 0 }
+  ],
+  badminton: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'minutesPlayed', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'pointsScored', label: 'Points Scored', type: 'number', min: 0 },
+    { id: 'winners', label: 'Winners', type: 'number', min: 0 },
+    { id: 'unforcedErrors', label: 'Unforced Errors', type: 'number', min: 0 },
+    { id: 'gamesWon', label: 'Games Won', type: 'number', min: 0 },
+    { id: 'gamesLost', label: 'Games Lost', type: 'number', min: 0 }
+  ],
+  boxing: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'roundsCompleted', label: 'Rounds Completed', type: 'number', min: 0 },
+    { id: 'punchesThrown', label: 'Punches Thrown', type: 'number', min: 0 },
+    { id: 'punchesConnected', label: 'Punches Connected', type: 'number', min: 0 },
+    { id: 'knockdowns', label: 'Knockdowns', type: 'number', min: 0 },
+    { id: 'focusMitts', label: 'Focus Mitts (rounds)', type: 'number', min: 0 }
+  ],
+  climbing: [
+    { id: 'routesDone', label: 'Routes Completed', type: 'number', min: 0 },
+    { id: 'routesFailed', label: 'Routes Failed', type: 'number', min: 0 },
+    { id: 'maxGrade', label: 'Max Grade Attempted', type: 'text', helperText: 'e.g., 5.10a' },
+    { id: 'durationMinutes', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'prHeight', label: 'Personal Record Height (m)', type: 'number', min: 0, step: 0.1 }
+  ],
+  cricket: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'runsScored', label: 'Runs Scored', type: 'number', min: 0 },
+    { id: 'ballsFaced', label: 'Balls Faced', type: 'number', min: 0 },
+    { id: 'wicketsTaken', label: 'Wickets Taken', type: 'number', min: 0 },
+    { id: 'runsConceded', label: 'Runs Conceded', type: 'number', min: 0 },
+    { id: 'overbowled', label: 'Overs Bowled', type: 'number', min: 0, step: 0.1 }
+  ],
+  cycling: [
+    { id: 'distance', label: 'Distance (km)', type: 'number', min: 0, step: 0.1 },
+    { id: 'duration', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'averageSpeed', label: 'Average Speed (km/h)', type: 'number', min: 0, step: 0.1 },
+    { id: 'elevationGain', label: 'Elevation Gain (m)', type: 'number', min: 0 },
+    { id: 'maxSpeed', label: 'Max Speed (km/h)', type: 'number', min: 0, step: 0.1 }
+  ],
+  fitness: [
+    { id: 'workoutType', label: 'Workout Type', type: 'text', helperText: 'e.g., Strength, Cardio, HIIT' },
+    { id: 'duration', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'caloriesBurned', label: 'Calories Burned', type: 'number', min: 0 },
+    { id: 'exerciseCount', label: 'Exercises Completed', type: 'number', min: 0 },
+    { id: 'maxWeight', label: 'Max Weight Lifted (kg)', type: 'number', min: 0, step: 0.1 }
+  ],
+  football: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'minutesPlayed', label: 'Minutes Played', type: 'number', min: 0 },
+    { id: 'positionPlayed', label: 'Position / Role', type: 'text' },
+    { id: 'touchdowns', label: 'Touchdowns', type: 'number', min: 0 },
+    { id: 'passingYards', label: 'Passing Yards', type: 'number', min: 0 },
+    { id: 'rushingYards', label: 'Rushing Yards', type: 'number', min: 0 },
+    { id: 'tackles', label: 'Tackles', type: 'number', min: 0 }
+  ],
+  frisbee: [
+    { id: 'opponent', label: 'Opponent / Team', type: 'text' },
+    { id: 'pointsScored', label: 'Points Scored', type: 'number', min: 0 },
+    { id: 'pointsAllowed', label: 'Points Allowed', type: 'number', min: 0 },
+    { id: 'breaksCompleted', label: 'Breaks Completed', type: 'number', min: 0 },
+    { id: 'turnovers', label: 'Turnovers', type: 'number', min: 0 }
+  ],
+  golf: [
+    { id: 'opponent', label: 'Course / Opponent', type: 'text' },
+    { id: 'score', label: 'Score', type: 'number' },
+    { id: 'holesCompleted', label: 'Holes Completed', type: 'number', min: 0, max: 18 },
+    { id: 'birdies', label: 'Birdies', type: 'number', min: 0 },
+    { id: 'eagles', label: 'Eagles', type: 'number', min: 0 },
+    { id: 'bogeys', label: 'Bogeys', type: 'number', min: 0 }
+  ],
+  hockey: [
+    { id: 'opponent', label: 'Opponent', type: 'text' },
+    { id: 'minutesPlayed', label: 'Minutes Played', type: 'number', min: 0 },
+    { id: 'goals', label: 'Goals', type: 'number', min: 0 },
+    { id: 'assists', label: 'Assists', type: 'number', min: 0 },
+    { id: 'shots', label: 'Shots', type: 'number', min: 0 },
+    { id: 'hitsReceived', label: 'Hits Received', type: 'number', min: 0 }
+  ],
+  pilates: [
+    { id: 'duration', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'exerciseCount', label: 'Exercises Completed', type: 'number', min: 0 },
+    { id: 'difficulty', label: 'Difficulty Level', type: 'text', helperText: 'e.g., Beginner, Intermediate, Advanced' },
+    { id: 'coreExercises', label: 'Core Exercises', type: 'number', min: 0 },
+    { id: 'flexibility', label: 'Flexibility Focus (Yes/No)', type: 'text' }
+  ],
+  skating: [
+    { id: 'type', label: 'Skating Type', type: 'text', helperText: 'e.g., Ice, Roller, Inline' },
+    { id: 'distance', label: 'Distance (km)', type: 'number', min: 0, step: 0.1 },
+    { id: 'duration', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'tricksAttempted', label: 'Tricks Attempted', type: 'number', min: 0 },
+    { id: 'tricksLanded', label: 'Tricks Landed', type: 'number', min: 0 }
+  ],
+  swimming: [
+    { id: 'distance', label: 'Distance (meters)', type: 'number', min: 0 },
+    { id: 'duration', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'strokeType', label: 'Primary Stroke', type: 'text', helperText: 'e.g., Freestyle, Backstroke, Breaststroke' },
+    { id: 'lapsCompleted', label: 'Laps Completed', type: 'number', min: 0 },
+    { id: 'poolLength', label: 'Pool Length (meters)', type: 'number', min: 0 }
+  ],
+  yoga: [
+    { id: 'duration', label: 'Duration (minutes)', type: 'number', min: 0 },
+    { id: 'styleType', label: 'Yoga Style', type: 'text', helperText: 'e.g., Vinyasa, Hatha, Yin' },
+    { id: 'flowCount', label: 'Sun Salutations / Flows', type: 'number', min: 0 },
+    { id: 'standingPoses', label: 'Standing Poses', type: 'number', min: 0 },
+    { id: 'balancingPoses', label: 'Balancing Poses Held', type: 'number', min: 0 }
   ],
   default: [
     { id: 'statOne', label: 'Custom Stat 1', type: 'number' },
@@ -272,13 +390,7 @@ export default function StatsPage() {
   const [note, setNote] = useState('')
   const [result, setResult] = useState<'W' | 'L' | 'D' | ''>('')
   const [performanceRating, setPerformanceRating] = useState<number>(7)
-  const [opponent, setOpponent] = useState('')
-  const [venueType, setVenueType] = useState<'Home' | 'Away' | 'Neutral' | ''>('')
-  const [minutesPlayed, setMinutesPlayed] = useState('')
-  const [positionPlayed, setPositionPlayed] = useState('')
   const [energyLevel, setEnergyLevel] = useState<number>(6)
-  const [mood, setMood] = useState<'Great' | 'Good' | 'Okay' | 'Tired' | 'Injured' | ''>('')
-  const [weather, setWeather] = useState('')
   const [extraMetrics, setExtraMetrics] = useState<Record<string, string>>({})
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [statToDelete, setStatToDelete] = useState<Stats | null>(null)
@@ -302,15 +414,6 @@ export default function StatsPage() {
   const metricDefinitions = SPORT_METRICS[sportKey] || SPORT_METRICS.default
 
   useEffect(() => {
-    setResult('')
-    setPerformanceRating(7)
-    setOpponent('')
-    setVenueType('')
-    setMinutesPlayed('')
-    setPositionPlayed('')
-    setEnergyLevel(6)
-    setMood('')
-    setWeather('')
     setExtraMetrics({})
   }, [selectedGameId])
 
@@ -344,13 +447,7 @@ export default function StatsPage() {
     setNote('')
     setResult('')
     setPerformanceRating(7)
-    setOpponent('')
-    setVenueType('')
-    setMinutesPlayed('')
-    setPositionPlayed('')
     setEnergyLevel(6)
-    setMood('')
-    setWeather('')
     setExtraMetrics({})
   }
 
@@ -375,25 +472,12 @@ export default function StatsPage() {
       }
     }
 
-    if (minutesPlayed) {
-      const minutes = Number(minutesPlayed)
-      if (Number.isNaN(minutes) || minutes < 0) {
-        alert('Minutes played must be a non-negative number.')
-        return false
-      }
-    }
-
     return true
   }
 
   const handleSaveStats = () => {
     if (!selectedGame || !note.trim()) {
       alert('Select a game you attended and enter notes.')
-      return
-    }
-
-    if (!result) {
-      alert('Select a result (Win, Loss, or Draw).')
       return
     }
 
@@ -405,8 +489,6 @@ export default function StatsPage() {
     if (!validateMetricInputs()) {
       return
     }
-
-    const numericMinutes = minutesPlayed ? Number(minutesPlayed) : undefined
 
     const metricsToPersist: Record<string, string | number> = {}
     metricDefinitions.forEach(def => {
@@ -424,20 +506,20 @@ export default function StatsPage() {
       gameId: selectedGame.id,
       gameTitle: selectedGame.title,
       sport: selectedGame.sport,
-      result,
+      result: (result as 'W' | 'L' | 'D' | undefined) || undefined,
       performanceRating,
       note: note.trim(),
       time: Date.now(),
       rebounds: typeof metricsToPersist.rebounds === 'number' ? metricsToPersist.rebounds : undefined,
       threePointers: typeof metricsToPersist.threePointers === 'number' ? metricsToPersist.threePointers : undefined,
       saves: typeof metricsToPersist.saves === 'number' ? metricsToPersist.saves : undefined,
-      opponent: opponent.trim() || undefined,
-      venueType: venueType || undefined,
-      minutesPlayed: numericMinutes,
-      position: positionPlayed.trim() || undefined,
+      opponent: (extraMetrics.opponent as string)?.trim() || undefined,
+      venueType: (extraMetrics.venueType as 'Home' | 'Away' | 'Neutral') || undefined,
+      minutesPlayed: extraMetrics.minutesPlayed ? Number(extraMetrics.minutesPlayed) : undefined,
+      position: (extraMetrics.positionPlayed as string)?.trim() || undefined,
       energyLevel,
-      mood: mood || undefined,
-      weather: weather.trim() || undefined,
+      mood: (extraMetrics.mood as 'Great' | 'Good' | 'Okay' | 'Tired' | 'Injured') || undefined,
+      weather: (extraMetrics.weather as string)?.trim() || undefined,
       extraMetrics: Object.keys(metricsToPersist).length > 0 ? metricsToPersist : undefined
     }
 
@@ -950,59 +1032,19 @@ export default function StatsPage() {
 
               {selectedGame && (
                 <Stack spacing={2} sx={{ mb: 3 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Result"
-                    value={result}
-                    onChange={(e) => setResult(e.target.value as 'W' | 'L' | 'D')}
-                  >
-                    <MenuItem value="W">Win</MenuItem>
-                    <MenuItem value="L">Loss</MenuItem>
-                    <MenuItem value="D">Draw</MenuItem>
-                  </TextField>
-
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                    <TextField
-                      fullWidth
-                      label="Opponent"
-                      value={opponent}
-                      onChange={(e) => setOpponent(e.target.value)}
-                    />
+                  {['basketball', 'soccer', 'tennis', 'baseball', 'volleyball'].includes(sportKey) && (
                     <TextField
                       select
                       fullWidth
-                      label="Venue"
-                      value={venueType}
-                      onChange={(e) => setVenueType(e.target.value as 'Home' | 'Away' | 'Neutral' | '')}
+                      label="Result"
+                      value={result}
+                      onChange={(e) => setResult(e.target.value as 'W' | 'L' | 'D')}
                     >
-                      <MenuItem value="">
-                        <em>Unknown</em>
-                      </MenuItem>
-                      {VENUE_OPTIONS.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
+                      <MenuItem value="W">Win</MenuItem>
+                      <MenuItem value="L">Loss</MenuItem>
+                      <MenuItem value="D">Draw</MenuItem>
                     </TextField>
-                  </Stack>
-
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                    <TextField
-                      type="number"
-                      label="Minutes Played"
-                      value={minutesPlayed}
-                      onChange={(e) => setMinutesPlayed(e.target.value)}
-                      inputProps={{ min: 0 }}
-                      fullWidth
-                    />
-                    <TextField
-                      fullWidth
-                      label="Position / Role"
-                      value={positionPlayed}
-                      onChange={(e) => setPositionPlayed(e.target.value)}
-                    />
-                  </Stack>
+                  )}
 
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                     <Box sx={{ flex: 1 }}>
@@ -1033,31 +1075,6 @@ export default function StatsPage() {
                         sx={{ mt: 1 }}
                       />
                     </Box>
-                  </Stack>
-
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Mood"
-                      value={mood}
-                      onChange={(e) => setMood(e.target.value as typeof mood)}
-                    >
-                      <MenuItem value="">
-                        <em>Choose mood</em>
-                      </MenuItem>
-                      {MOOD_OPTIONS.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField
-                      fullWidth
-                      label="Weather / Conditions"
-                      value={weather}
-                      onChange={(e) => setWeather(e.target.value)}
-                    />
                   </Stack>
 
                   <Box>
@@ -1091,7 +1108,7 @@ export default function StatsPage() {
                   variant="contained"
                   endIcon={<SaveIcon />}
                   onClick={handleSaveStats}
-                  disabled={!selectedGame || !note.trim() || !result}
+                  disabled={!selectedGame || !note.trim()}
                   fullWidth
                 >
                   Save Stats Entry
@@ -1100,7 +1117,8 @@ export default function StatsPage() {
                   variant="outlined"
                   startIcon={<UndoIcon />}
                   onClick={handleResetForm}
-                  fullWidth
+                  color="error"
+                  size="small"
                 >
                   Clear
                 </Button>
