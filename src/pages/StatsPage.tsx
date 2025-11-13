@@ -27,6 +27,9 @@ import {
 } from '@mui/material'
 import { keyframes } from '@mui/system'
 import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import SaveIcon from '@mui/icons-material/Save'
 import UndoIcon from '@mui/icons-material/Undo'
@@ -395,6 +398,11 @@ export default function StatsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [statToDelete, setStatToDelete] = useState<Stats | null>(null)
   const [selectedSportStats, setSelectedSportStats] = useState<typeof sportInsights[0] | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [statToEdit, setStatToEdit] = useState<Stats | null>(null)
+  const [editedMetrics, setEditedMetrics] = useState<Record<string, string>>({})
+  const [readoutDialogOpen, setReadoutDialogOpen] = useState(false)
+  const [statToReadout, setStatToReadout] = useState<Stats | null>(null)
 
   if (!initialized) {
     return <Box sx={{ p: 2 }}>Loading...</Box>
@@ -440,6 +448,62 @@ export default function StatsPage() {
       setDeleteDialogOpen(false)
       setStatToDelete(null)
     }
+  }
+
+  const handleEditClick = (stat: Stats) => {
+    setStatToEdit(stat)
+    const metrics: Record<string, string> = {}
+    if (stat.performanceRating) metrics.performanceRating = String(stat.performanceRating)
+    if (stat.energyLevel) metrics.energyLevel = String(stat.energyLevel)
+    if (stat.note) metrics.note = stat.note
+    if (stat.extraMetrics) {
+      Object.entries(stat.extraMetrics).forEach(([key, value]) => {
+        metrics[key] = String(value)
+      })
+    }
+    setEditedMetrics(metrics)
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (!statToEdit) return
+
+    const updated: Stats = {
+      ...statToEdit,
+      performanceRating: editedMetrics.performanceRating ? Number(editedMetrics.performanceRating) : statToEdit.performanceRating,
+      energyLevel: editedMetrics.energyLevel ? Number(editedMetrics.energyLevel) : statToEdit.energyLevel,
+      note: editedMetrics.note || statToEdit.note,
+      extraMetrics: statToEdit.extraMetrics
+    }
+
+    // Rebuild extraMetrics from edited values (only sport-specific metrics)
+    const newExtraMetrics: Record<string, string | number> = {}
+    Object.entries(editedMetrics).forEach(([key, value]) => {
+      if (!['performanceRating', 'energyLevel', 'note'].includes(key) && value) {
+        newExtraMetrics[key] = Number.isNaN(Number(value)) ? value : Number(value)
+      }
+    })
+    updated.extraMetrics = Object.keys(newExtraMetrics).length > 0 ? newExtraMetrics : undefined
+
+    // Update the stat
+    const statIndex = stats.findIndex(s => s.id === statToEdit.id)
+    if (statIndex >= 0) {
+      const newStats = [...stats]
+      newStats[statIndex] = updated
+      // Note: This assumes there's an updateStat method in AppContext
+      // For now, we'll delete and re-add
+      deleteStat(statToEdit.id)
+      addStat(updated)
+    }
+
+    setEditDialogOpen(false)
+    setStatToEdit(null)
+    setEditedMetrics({})
+  }
+
+  const handleReadoutClick = (stat: Stats) => {
+    setStatToReadout(stat)
+    setReadoutDialogOpen(true)
   }
 
   const handleResetForm = () => {
@@ -759,28 +823,14 @@ export default function StatsPage() {
     return chips
   }
 
+  const isCompetitiveSport = (sport: string) => {
+    return ['basketball', 'soccer', 'tennis', 'baseball', 'volleyball'].includes(sport)
+  }
+
   const StatCharacterWindow = ({ sportData }: { sportData: typeof sportInsights[0] }) => {
     const winRate = sportData.count > 0 
       ? ((sportData.wins / sportData.count) * 100).toFixed(1)
       : 0
-    
-    const getPerformanceLevel = (rating: number | null) => {
-      if (!rating) return 'NOVICE'
-      if (rating >= 9) return 'LEGENDARY'
-      if (rating >= 8) return 'EPIC'
-      if (rating >= 7) return 'RARE'
-      if (rating >= 6) return 'UNCOMMON'
-      return 'COMMON'
-    }
-
-    const getPerformanceColor = (rating: number | null) => {
-      if (!rating) return '#666'
-      if (rating >= 9) return '#FFD700'
-      if (rating >= 8) return '#FF6B9D'
-      if (rating >= 7) return '#00D9FF'
-      if (rating >= 6) return '#90EE90'
-      return '#A9A9A9'
-    }
 
     return (
       <Modal
@@ -788,211 +838,134 @@ export default function StatsPage() {
         onClose={() => setSelectedSportStats(null)}
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        <Box
-          sx={{
-            position: 'relative',
-            width: '90%',
-            maxWidth: 600,
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-            border: '3px solid #00d9ff',
-            borderRadius: '12px',
-            boxShadow: '0 0 40px rgba(0, 217, 255, 0.5), inset 0 0 20px rgba(0, 217, 255, 0.1)',
-            padding: 3,
-            color: '#fff',
-            fontFamily: '"Press Start 2P", monospace, system-ui'
-          }}
-        >
-          {/* Close Button */}
-          <Button
-            onClick={() => setSelectedSportStats(null)}
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              color: '#00d9ff',
-              fontSize: '12px',
-              border: '2px solid #00d9ff',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 217, 255, 0.1)',
-                boxShadow: '0 0 10px rgba(0, 217, 255, 0.5)'
-              }
-            }}
-          >
-            ✕
-          </Button>
-
-          {/* Header */}
-          <Typography
-            sx={{
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#00d9ff',
-              textShadow: '0 0 10px rgba(0, 217, 255, 0.8)',
-              mb: 2,
-              textAlign: 'center',
-              textTransform: 'uppercase',
-              letterSpacing: '2px'
-            }}
-          >
-            {sportData.sport === 'other' ? 'OTHER SPORTS' : humanize(sportData.sport)}
-          </Typography>
-
-          {/* Level Badge */}
-          <Box
-            sx={{
-              textAlign: 'center',
-              mb: 3,
-              padding: '12px',
-              border: `2px solid ${getPerformanceColor(sportData.averageRating)}`,
-              borderRadius: '8px',
-              backgroundColor: `${getPerformanceColor(sportData.averageRating)}20`
-            }}
-          >
-            <Typography sx={{ fontSize: '14px', color: '#888' }}>LEVEL</Typography>
-            <Typography
-              sx={{
-                fontSize: '20px',
-                fontWeight: 'bold',
-                color: getPerformanceColor(sportData.averageRating),
-                textShadow: `0 0 10px ${getPerformanceColor(sportData.averageRating)}`
-              }}
-            >
-              {getPerformanceLevel(sportData.averageRating)}
-            </Typography>
-          </Box>
-
-          {/* Stats Grid */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            {/* Performance Rating */}
-            <Grid item xs={6}>
-              <Box sx={{ padding: '12px', border: '2px solid #00d9ff', borderRadius: '4px' }}>
-                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>RATING</Typography>
-                <Typography sx={{ fontSize: '18px', fontWeight: 'bold', color: '#00ff88' }}>
-                  {sportData.averageRating ? `${sportData.averageRating.toFixed(1)}/10` : 'N/A'}
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={(sportData.averageRating || 0) * 10}
-                  sx={{
-                    mt: 1,
-                    height: 6,
-                    backgroundColor: '#0a2647',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#00ff88'
-                    }
-                  }}
-                />
-              </Box>
-            </Grid>
-
-            {/* Sessions Completed */}
-            <Grid item xs={6}>
-              <Box sx={{ padding: '12px', border: '2px solid #ff6b9d', borderRadius: '4px' }}>
-                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>SESSIONS</Typography>
-                <Typography sx={{ fontSize: '18px', fontWeight: 'bold', color: '#ff6b9d' }}>
-                  {sportData.count}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Win Rate */}
-            <Grid item xs={6}>
-              <Box sx={{ padding: '12px', border: '2px solid #ffd700', borderRadius: '4px' }}>
-                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>WIN RATE</Typography>
-                <Typography sx={{ fontSize: '18px', fontWeight: 'bold', color: '#ffd700' }}>
-                  {winRate}%
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={Number(winRate)}
-                  sx={{
-                    mt: 1,
-                    height: 6,
-                    backgroundColor: '#0a2647',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#ffd700'
-                    }
-                  }}
-                />
-              </Box>
-            </Grid>
-
-            {/* Record */}
-            <Grid item xs={6}>
-              <Box sx={{ padding: '12px', border: '2px solid #90ee90', borderRadius: '4px' }}>
-                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>RECORD</Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                  <Typography sx={{ fontSize: '14px', color: '#90ee90', fontWeight: 'bold' }}>
-                    W:{sportData.wins}
-                  </Typography>
-                  <Typography sx={{ fontSize: '14px', color: '#ff6b6b', fontWeight: 'bold' }}>
-                    L:{sportData.losses}
-                  </Typography>
-                  <Typography sx={{ fontSize: '14px', color: '#a0a0a0', fontWeight: 'bold' }}>
-                    D:{sportData.draws}
-                  </Typography>
-                </Stack>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* Metrics Section */}
-          {sportData.metrics.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Typography sx={{ fontSize: '12px', color: '#888', mb: 2, textTransform: 'uppercase' }}>
-                📊 Performance Metrics
+        <Card sx={{ width: '90%', maxWidth: 600 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                {sportData.sport === 'other' ? 'Other Sports' : humanize(sportData.sport)}
               </Typography>
-              <Stack spacing={1.5}>
-                {sportData.metrics.slice(0, 8).map(metric => {
-                  const avgVal = metric.count > 0 ? metric.total / metric.count : 0
-                  const maxPossible = Math.max(100, metric.total)
-                  const percentage = (avgVal / maxPossible) * 100
-                  
-                  return (
-                    <Box key={metric.id}>
-                      <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                        <Typography sx={{ fontSize: '11px', color: '#00d9ff', fontWeight: 'bold' }}>
-                          {metric.label}
-                        </Typography>
-                        <Typography sx={{ fontSize: '11px', color: '#ffd700' }}>
-                          {metric.count > 1 ? `${avgVal.toFixed(1)} avg` : metric.total}
-                        </Typography>
-                      </Stack>
-                      <LinearProgress
-                        variant="determinate"
-                        value={Math.min(percentage, 100)}
-                        sx={{
-                          height: 8,
-                          backgroundColor: '#0a2647',
-                          borderRadius: '4px',
-                          '& .MuiLinearProgress-bar': {
-                            backgroundColor: '#00d9ff',
-                            boxShadow: '0 0 10px rgba(0, 217, 255, 0.5)'
-                          }
-                        }}
-                      />
-                    </Box>
-                  )
-                })}
-              </Stack>
-            </Box>
-          )}
+              <Button
+                onClick={() => setSelectedSportStats(null)}
+                variant="text"
+                size="small"
+                sx={{ minWidth: 'auto' }}
+              >
+                ✕
+              </Button>
+            </Stack>
 
-          {/* Footer Message */}
-          <Box
-            sx={{
-              textAlign: 'center',
-              padding: '12px',
-              borderTop: '2px solid #00d9ff',
-              marginTop: 2,
-              fontSize: '10px',
-              color: '#888',
-              fontStyle: 'italic'
-            }}
-          >
-            Keep pushing your limits to unlock higher achievements!
-          </Box>
-        </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            <Stack spacing={2}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Box>
+                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                      AVERAGE RATING
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2', mt: 0.5 }}>
+                      {sportData.averageRating ? `${sportData.averageRating.toFixed(1)}/10` : 'N/A'}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={6}>
+                  <Box>
+                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                      SESSIONS
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                      {sportData.count}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                {isCompetitiveSport(sportData.sport) && (
+                  <>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                          WIN RATE
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                          {winRate}%
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                          RECORD
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Chip 
+                            label={`W ${sportData.wins}`} 
+                            sx={{ 
+                              backgroundColor: sportData.wins > sportData.losses && sportData.wins > sportData.draws ? '#4caf50' : 'transparent',
+                              color: sportData.wins > sportData.losses && sportData.wins > sportData.draws ? '#fff' : 'inherit',
+                              border: sportData.wins > sportData.losses && sportData.wins > sportData.draws ? 'none' : '1px solid #ccc'
+                            }}
+                          />
+                          <Chip 
+                            label={`L ${sportData.losses}`} 
+                            sx={{ 
+                              backgroundColor: sportData.losses > sportData.wins && sportData.losses > sportData.draws ? '#f44336' : 'transparent',
+                              color: sportData.losses > sportData.wins && sportData.losses > sportData.draws ? '#fff' : 'inherit',
+                              border: sportData.losses > sportData.wins && sportData.losses > sportData.draws ? 'none' : '1px solid #ccc'
+                            }}
+                          />
+                          <Chip 
+                            label={`D ${sportData.draws}`} 
+                            sx={{ 
+                              backgroundColor: sportData.draws > sportData.wins && sportData.draws > sportData.losses ? '#2196f3' : 'transparent',
+                              color: sportData.draws > sportData.wins && sportData.draws > sportData.losses ? '#fff' : 'inherit',
+                              border: sportData.draws > sportData.wins && sportData.draws > sportData.losses ? 'none' : '1px solid #ccc'
+                            }}
+                          />
+                        </Stack>
+                      </Box>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+
+              {sportData.metrics.length > 0 && (
+                <>
+                  <Divider />
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Performance Metrics
+                    </Typography>
+                    <Stack spacing={1.5}>
+                      {sportData.metrics.slice(0, 8).map(metric => {
+                        const avgVal = metric.count > 0 ? metric.total / metric.count : 0
+                        const maxPossible = Math.max(100, metric.total)
+                        const percentage = (avgVal / maxPossible) * 100
+                        
+                        return (
+                          <Box key={metric.id}>
+                            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                              <Typography variant="body2">{metric.label}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                {metric.count > 1 ? `${avgVal.toFixed(1)} avg` : metric.total}
+                              </Typography>
+                            </Stack>
+                            <LinearProgress
+                              variant="determinate"
+                              value={Math.min(percentage, 100)}
+                              sx={{ height: 6, borderRadius: '4px' }}
+                            />
+                          </Box>
+                        )
+                      })}
+                    </Stack>
+                  </Box>
+                </>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
       </Modal>
     )
   }
@@ -1108,7 +1081,7 @@ export default function StatsPage() {
                   variant="contained"
                   endIcon={<SaveIcon />}
                   onClick={handleSaveStats}
-                  disabled={!selectedGame || !note.trim()}
+                  disabled={!selectedGame || !note.trim() || (isCompetitiveSport(selectedGame?.sport || '') && !result)}
                   fullWidth
                 >
                   Save Stats Entry
@@ -1136,34 +1109,42 @@ export default function StatsPage() {
               </Typography>
             ) : (
               sortedStats.map(stat => (
-                <ListItem key={stat.id} divider alignItems="flex-start" secondaryAction={
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={() => handleDeleteClick(stat)}
-                    color="error"
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                }>
+                <ListItem 
+                  key={stat.id} 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: 1,
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    padding: 2,
+                    marginBottom: 1,
+                    backgroundColor: '#fafafa',
+                    '&:hover': {
+                      backgroundColor: '#f5f5f5'
+                    }
+                  }}
+                >
                   <ListItemText
                     primary={stat.gameTitle}
+                    primaryTypographyProps={{
+                      sx: {
+                        paddingBottom: 1,
+                        borderBottom: '2px solid #1976d2',
+                        width: 'calc(100% + 100px)',
+                        marginRight: '-100px',
+                        paddingRight: '100px'
+                      }
+                    }}
                     secondary={
                       <>
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 0.5 }}>
-                          {stat.result && (
-                            <Chip
-                              label={`Result: ${stat.result}`}
-                              color={stat.result === 'W' ? 'success' : stat.result === 'L' ? 'error' : 'default'}
-                              size="small"
-                            />
-                          )}
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 0.5, mt: 1 }}>
                           {typeof stat.performanceRating === 'number' && (
-                            <Chip label={`Rating: ${stat.performanceRating}/10`} size="small" variant="outlined" />
+                            <Chip label={`Performance: ${stat.performanceRating}/10`} size="small" variant="outlined" />
                           )}
-                          {renderGeneralInfoChips(stat)}
-                          {renderMetricChips(stat)}
+                          {typeof stat.energyLevel === 'number' && (
+                            <Chip label={`Energy: ${stat.energyLevel}/10`} size="small" variant="outlined" />
+                          )}
                         </Stack>
                         <Typography variant="caption" display="block">
                           {new Date(stat.time).toLocaleString()} {stat.sport ? `• ${humanize(stat.sport)}` : ''}
@@ -1176,6 +1157,35 @@ export default function StatsPage() {
                       </>
                     }
                   />
+                  <Stack direction="row" spacing={0} sx={{ ml: 'auto', flexShrink: 0 }}>
+                    <IconButton
+                      edge="end"
+                      aria-label="view"
+                      onClick={() => handleReadoutClick(stat)}
+                      color="info"
+                      size="small"
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      aria-label="edit"
+                      onClick={() => handleEditClick(stat)}
+                      color="primary"
+                      size="small"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      aria-label="delete"
+                      onClick={() => handleDeleteClick(stat)}
+                      color="error"
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Stack>
                 </ListItem>
               ))
             )}
@@ -1193,12 +1203,12 @@ export default function StatsPage() {
             <Stack spacing={3}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
+                  <Typography variant="h5" sx={{ mb: 1, fontWeight: 'bold' }}>
                     Snapshot
                   </Typography>
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                     <Chip label={`Entries: ${overallMetrics?.totalEntries ?? stats.length}`} color="primary" variant="outlined" />
-                    <Chip label={`Games Logged: ${overallMetrics?.gamesLogged ?? '-'}`} color="primary" variant="outlined" />
+                    <Chip label={`Sports Logged: ${overallMetrics?.gamesLogged ?? '-'}`} color="primary" variant="outlined" />
                     {latestStatTime && (
                       <Chip
                         label={`Last Update: ${new Date(latestStatTime).toLocaleString()}`}
@@ -1225,12 +1235,6 @@ export default function StatsPage() {
                       />
                       ) : null
                     })()}
-                    <Chip label={`W ${overallMetrics?.wins ?? 0}`} size="small" variant="outlined" />
-                    <Chip label={`L ${overallMetrics?.losses ?? 0}`} size="small" variant="outlined" />
-                    <Chip label={`D ${overallMetrics?.draws ?? 0}`} size="small" variant="outlined" />
-                    {overallMetrics?.topMood && (
-                      <Chip label={`Common Mood: ${overallMetrics.topMood}`} size="small" variant="outlined" />
-                    )}
                   </Stack>
                 </CardContent>
               </Card>
@@ -1238,78 +1242,81 @@ export default function StatsPage() {
               {sportInsights.map(summary => (
                 <Card 
                   key={summary.sport}
-                  onClick={() => setSelectedSportStats(summary)}
                   sx={{
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 24px rgba(0, 217, 255, 0.3)',
-                      backgroundColor: '#f9f9f9'
-                    }
+                    position: 'relative'
                   }}
                 >
-                  {/* Clickable Indicator Badge */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      backgroundColor: 'rgba(0, 217, 255, 0.1)',
-                      border: '2px solid',
-                      borderColor: 'rgba(0, 217, 255, 0.4)',
-                      borderRadius: '20px',
-                      padding: '4px 10px',
-                      animation: `${rotatingBorder} 2s linear infinite`
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        backgroundColor: '#00d9ff',
-                        boxShadow: '0 0 8px rgba(0, 217, 255, 0.8)'
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: '#00d9ff',
-                        letterSpacing: '0.5px'
-                      }}
-                    >
-                      CLICK
-                    </Typography>
-                  </Box>
                   <CardContent>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                      {summary.sport === 'other' ? 'Other Sports' : humanize(summary.sport)}
-                    </Typography>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {summary.sport === 'other' ? 'Other Sports' : humanize(summary.sport)}
+                        </Typography>
+                        {isCompetitiveSport(summary.sport) && (
+                          <Stack direction="row" spacing={0.5}>
+                            <Chip 
+                              label={`W${summary.wins}`} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: summary.wins > summary.losses && summary.wins > summary.draws ? '#4caf50' : 'transparent',
+                                color: summary.wins > summary.losses && summary.wins > summary.draws ? '#fff' : 'inherit',
+                                border: summary.wins > summary.losses && summary.wins > summary.draws ? 'none' : '1px solid #ccc',
+                                height: '24px'
+                              }}
+                            />
+                            <Chip 
+                              label={`L${summary.losses}`} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: summary.losses > summary.wins && summary.losses > summary.draws ? '#f44336' : 'transparent',
+                                color: summary.losses > summary.wins && summary.losses > summary.draws ? '#fff' : 'inherit',
+                                border: summary.losses > summary.wins && summary.losses > summary.draws ? 'none' : '1px solid #ccc',
+                                height: '24px'
+                              }}
+                            />
+                            <Chip 
+                              label={`D${summary.draws}`} 
+                              size="small" 
+                              sx={{ 
+                                backgroundColor: summary.draws > summary.wins && summary.draws > summary.losses ? '#2196f3' : 'transparent',
+                                color: summary.draws > summary.wins && summary.draws > summary.losses ? '#fff' : 'inherit',
+                                border: summary.draws > summary.wins && summary.draws > summary.losses ? 'none' : '1px solid #ccc',
+                                height: '24px'
+                              }}
+                            />
+                          </Stack>
+                        )}
+                      </Stack>
+                      <Button
+                        onClick={() => setSelectedSportStats(summary)}
+                        variant="outlined"
+                        size="small"
+                        startIcon={<SportsEsportsIcon />}
+                      >
+                        View
+                      </Button>
+                    </Stack>
                     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 2 }}>
-                      <Chip label={`${summary.count} log${summary.count > 1 ? 's' : ''}`} color="success" />
+                      <Chip label={`${summary.count} log${summary.count > 1 ? 's' : ''}`} color="primary" variant="outlined" />
                       {summary.averageRating !== null && (
                         <Chip label={`Avg Rating ${summary.averageRating.toFixed(1)}/10`} variant="outlined" />
                       )}
-                      <Chip label={`W ${summary.wins}`} size="small" variant="outlined" />
-                      <Chip label={`L ${summary.losses}`} size="small" variant="outlined" />
-                      <Chip label={`D ${summary.draws}`} size="small" variant="outlined" />
+                      {(() => {
+                        const energyMetric = summary.metrics.find(m => m.id === 'energyLevel')
+                        if (!energyMetric) return null
+                        const avgEnergy = energyMetric.count > 0 ? energyMetric.total / energyMetric.count : 0
+                        return <Chip label={`Avg Energy ${avgEnergy.toFixed(1)}/10`} variant="outlined" />
+                      })()}
                     </Stack>
                     {summary.metrics.length > 0 && (
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                         {summary.metrics.map(metric => (
                           <Chip
                             key={metric.id}
-                            label={`${metric.label}: ${metric.total}${metric.count > 1 ? ` (avg ${(
-                              metric.total / metric.count
-                            ).toFixed(1)})` : ''}`}
+                            label={`${metric.label}: ${metric.total}`}
                             size="small"
                             variant="outlined"
+                            sx={{ fontSize: '0.75rem' }}
                           />
                         ))}
                       </Stack>
@@ -1319,45 +1326,58 @@ export default function StatsPage() {
               ))}
 
               {recentHighlights.length > 0 && (
-                <Card>
-                  <CardContent>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                      Recent Highlights
-                    </Typography>
-                    <Stack spacing={1.5}>
-                      {recentHighlights.map(stat => (
-                        <Box key={stat.id}>
-                          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 0.5 }}>
-                            <Chip label={stat.gameTitle} size="small" variant="outlined" />
-                            {stat.result && (
-                              <Chip
-                                label={stat.result === 'W' ? 'Win' : stat.result === 'L' ? 'Loss' : 'Draw'}
-                                size="small"
-                                color={stat.result === 'W' ? 'success' : stat.result === 'L' ? 'error' : 'default'}
-                              />
-                            )}
-                            {typeof stat.performanceRating === 'number' && (
-                              <Chip label={`Rating ${stat.performanceRating}/10`} size="small" variant="outlined" />
-                            )}
-                            {typeof stat.energyLevel === 'number' && (
-                              <Chip label={`Energy ${stat.energyLevel}/10`} size="small" variant="outlined" />
-                            )}
-                          </Stack>
-                          <Typography variant="caption" display="block" color="textSecondary">
-                            {new Date(stat.time).toLocaleString()} {stat.sport ? `• ${humanize(stat.sport)}` : ''}
-                            {stat.opponent ? ` • vs ${stat.opponent}` : ''}
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+                    Recent Highlights
+                  </Typography>
+                  <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
+                    {recentHighlights.map(stat => (
+                      <Box
+                        key={stat.id}
+                        sx={{
+                          flex: '1 1 calc(33.333% - 12px)',
+                          minWidth: '140px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '8px',
+                          padding: 1.5,
+                          backgroundColor: '#fafafa',
+                          '&:hover': {
+                            backgroundColor: '#f5f5f5'
+                          },
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, mr: 1 }}>
+                            {stat.gameTitle}
                           </Typography>
-                          {stat.note && (
-                            <Typography variant="body2" sx={{ mt: 0.5 }}>
-                              {stat.note}
+                          {typeof stat.performanceRating === 'number' && (
+                            <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#1976d2', whiteSpace: 'nowrap' }}>
+                              {stat.performanceRating}/10
                             </Typography>
                           )}
-                          <Divider sx={{ mt: 1.5 }} />
-                        </Box>
-                      ))}
-                    </Stack>
-                  </CardContent>
-                </Card>
+                        </Stack>
+                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', mb: 0.5, gap: 0.5 }}>
+                          {stat.result && (
+                            <Chip
+                              label={stat.result === 'W' ? 'W' : stat.result === 'L' ? 'L' : 'D'}
+                              size="small"
+                              color={stat.result === 'W' ? 'success' : stat.result === 'L' ? 'error' : 'default'}
+                              sx={{ height: '20px' }}
+                            />
+                          )}
+                        </Stack>
+                        <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#999', mb: 0.5 }}>
+                          {new Date(stat.time).toLocaleDateString()} {new Date(stat.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#999' }} display="block">
+                          {humanize(stat.sport || 'Other')}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
               )}
             </Stack>
           )}
@@ -1395,6 +1415,242 @@ export default function StatsPage() {
             Delete
           </Button>
         </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false)
+          setStatToEdit(null)
+          setEditedMetrics({})
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Stat Entry - {statToEdit?.gameTitle}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Stack spacing={2}>
+            {/* Required Fields */}
+            <Box>
+              <Typography variant="caption" color="textSecondary">
+                Performance Rating (1-10) *
+              </Typography>
+              <Slider
+                value={Number(editedMetrics.performanceRating) || statToEdit?.performanceRating || 7}
+                onChange={(_, value) => setEditedMetrics({ ...editedMetrics, performanceRating: String(value) })}
+                min={1}
+                max={10}
+                step={1}
+                valueLabelDisplay="auto"
+                sx={{ mt: 1 }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="textSecondary">
+                Energy Level (1-10) *
+              </Typography>
+              <Slider
+                value={Number(editedMetrics.energyLevel) || statToEdit?.energyLevel || 6}
+                onChange={(_, value) => setEditedMetrics({ ...editedMetrics, energyLevel: String(value) })}
+                min={1}
+                max={10}
+                step={1}
+                valueLabelDisplay="auto"
+                sx={{ mt: 1 }}
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Notes *"
+              value={editedMetrics.note || ''}
+              onChange={(e) => setEditedMetrics({ ...editedMetrics, note: e.target.value })}
+              required
+            />
+
+            {/* Sport-Specific Optional Metrics */}
+            {statToEdit?.sport && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                  Sport-Specific Metrics (Optional)
+                </Typography>
+                {SPORT_METRICS[normalizeSportKey(statToEdit.sport)]?.map(def => {
+                  const value = editedMetrics[def.id] ?? ''
+                  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>) => {
+                    setEditedMetrics({ ...editedMetrics, [def.id]: e.target.value })
+                  }
+
+                  if (def.type === 'select' && def.options) {
+                    return (
+                      <TextField
+                        key={def.id}
+                        select
+                        fullWidth
+                        label={def.label}
+                        value={value}
+                        onChange={handleChange}
+                      >
+                        <MenuItem value="">None</MenuItem>
+                        {def.options.map(option => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )
+                  }
+
+                  const numberProps = def.type === 'number'
+                    ? { type: 'number', inputProps: { min: def.min, max: def.max, step: def.step ?? 1 } }
+                    : { type: 'text' as const }
+
+                  return (
+                    <TextField
+                      key={def.id}
+                      fullWidth
+                      label={def.label}
+                      value={value}
+                      onChange={handleChange}
+                      helperText={def.helperText}
+                      {...numberProps}
+                    />
+                  )
+                })}
+              </>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setEditDialogOpen(false)
+              setStatToEdit(null)
+              setEditedMetrics({})
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            color="primary"
+            variant="contained"
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={readoutDialogOpen}
+        onClose={() => {
+          setReadoutDialogOpen(false)
+          setStatToReadout(null)
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Stat Details
+          <IconButton
+            onClick={() => {
+              setReadoutDialogOpen(false)
+              setStatToReadout(null)
+            }}
+            sx={{ marginRight: -1 }}
+          >
+            ×
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          {statToReadout && (
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                  GAME
+                </Typography>
+                <Typography variant="body1">{statToReadout.gameTitle}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                  SPORT
+                </Typography>
+                <Typography variant="body1">{humanize(statToReadout.sport || 'N/A')}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                  DATE & TIME
+                </Typography>
+                <Typography variant="body1">{new Date(statToReadout.time).toLocaleString()}</Typography>
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                  PERFORMANCE RATING
+                </Typography>
+                <Typography variant="body1">{statToReadout.performanceRating || 'N/A'}/10</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                  ENERGY LEVEL
+                </Typography>
+                <Typography variant="body1">{statToReadout.energyLevel || 'N/A'}/10</Typography>
+              </Box>
+
+              {statToReadout.result && (
+                <Box>
+                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                    RESULT
+                  </Typography>
+                  <Typography variant="body1">
+                    {statToReadout.result === 'W' ? 'Win' : statToReadout.result === 'L' ? 'Loss' : 'Draw'}
+                  </Typography>
+                </Box>
+              )}
+
+              {statToReadout.extraMetrics && Object.keys(statToReadout.extraMetrics).length > 0 && (
+                <>
+                  <Divider />
+                  <Box>
+                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
+                      SPORT METRICS
+                    </Typography>
+                    <Stack spacing={1}>
+                      {Object.entries(statToReadout.extraMetrics).map(([key, value]) => (
+                        <Stack key={key} direction="row" justifyContent="space-between">
+                          <Typography variant="body2">{formatMetricLabel(key)}:</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{value}</Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Box>
+                </>
+              )}
+
+              {statToReadout.note && (
+                <>
+                  <Divider />
+                  <Box>
+                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                      NOTES
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                      {statToReadout.note}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
       </Dialog>
 
       {selectedSportStats && <StatCharacterWindow sportData={selectedSportStats} />}
