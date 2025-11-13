@@ -13,15 +13,20 @@ import {
   Grid,
   IconButton,
   useMediaQuery,
-  useTheme
+  useTheme,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
-import { Game } from '../types'
+import { Game, FieldReservation } from '../types'
 import { useApp } from '../context/AppContext'
 import { getSportColor, getSportIconSVG, capitalize } from '../utils'
+import FieldReservationModal from './FieldReservationModal'
 
 interface CalendarViewProps {
   games: Game[]
@@ -42,6 +47,8 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [dayDetailsOpen, setDayDetailsOpen] = useState(false)
   const [dayDetailsDate, setDayDetailsDate] = useState<string | null>(null)
+  const [showReservationModal, setShowReservationModal] = useState(false)
+  const [selectedReservation, setSelectedReservation] = useState<FieldReservation | null>(null)
 
   // Get current week (Sunday to Saturday)
   const getCurrentWeek = (base = new Date()) => {
@@ -76,16 +83,32 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
     end.setHours(23, 59, 59, 999)
 
     games.forEach(game => {
-      if (!game.date) return
-      const gameDate = new Date(game.date + 'T00:00:00')
-      if (gameDate >= start && gameDate <= end) {
-        const isHosting = game.host === profile?.name
-        const isAttending = game.reservedByMe && !isHosting
-        if (isHosting || isAttending) {
-          const dateStr = game.date
-          if (!map[dateStr]) map[dateStr] = []
-          map[dateStr].push({ game, isHosting })
+      // For games with dates, check if they're in range
+      if (game.date) {
+        const gameDate = new Date(game.date + 'T00:00:00')
+        if (gameDate >= start && gameDate <= end) {
+          const isHosting = game.host === profile?.name
+          const isAttending = game.reservedByMe && !isHosting
+          if (isHosting || isAttending) {
+            const dateStr = game.date
+            if (!map[dateStr]) map[dateStr] = []
+            map[dateStr].push({ game, isHosting })
+          }
         }
+      }
+
+      // For fields, check user reservations
+      if (game.type === 'field' && game.reservations) {
+        game.reservations.forEach(res => {
+          if (res.userName === profile?.name) {
+            const resDate = new Date(res.date + 'T00:00:00')
+            if (resDate >= start && resDate <= end) {
+              const dateStr = res.date
+              if (!map[dateStr]) map[dateStr] = []
+              map[dateStr].push({ game, isHosting: false })
+            }
+          }
+        })
       }
     })
     return map
@@ -98,26 +121,49 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
     const monthEventMap: { [key: string]: CalendarEvent[] } = {}
 
     games.forEach(game => {
-      if (!game.date) return
+      // For games with dates
+      if (game.date) {
+        const gameDate = new Date(game.date + 'T00:00:00')
+        const monthYear = `${gameDate.getFullYear()}-${String(gameDate.getMonth() + 1).padStart(2, '0')}`
+        const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
 
-      const gameDate = new Date(game.date + 'T00:00:00')
-      const monthYear = `${gameDate.getFullYear()}-${String(gameDate.getMonth() + 1).padStart(2, '0')}`
-      const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+        if (monthYear === currentMonthYear) {
+          const isHosting = game.host === profile?.name
+          const isAttending = game.reservedByMe && !isHosting
 
-      if (monthYear === currentMonthYear) {
-        const isHosting = game.host === profile?.name
-        const isAttending = game.reservedByMe && !isHosting
-
-        if (isHosting || isAttending) {
-          const dateStr = game.date
-          if (!monthEventMap[dateStr]) {
-            monthEventMap[dateStr] = []
+          if (isHosting || isAttending) {
+            const dateStr = game.date
+            if (!monthEventMap[dateStr]) {
+              monthEventMap[dateStr] = []
+            }
+            monthEventMap[dateStr].push({
+              game,
+              isHosting
+            })
           }
-          monthEventMap[dateStr].push({
-            game,
-            isHosting
-          })
         }
+      }
+
+      // For fields, check user reservations
+      if (game.type === 'field' && game.reservations) {
+        game.reservations.forEach(res => {
+          if (res.userName === profile?.name) {
+            const resDate = new Date(res.date + 'T00:00:00')
+            const monthYear = `${resDate.getFullYear()}-${String(resDate.getMonth() + 1).padStart(2, '0')}`
+            const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+
+            if (monthYear === currentMonthYear) {
+              const dateStr = res.date
+              if (!monthEventMap[dateStr]) {
+                monthEventMap[dateStr] = []
+              }
+              monthEventMap[dateStr].push({
+                game,
+                isHosting: false
+              })
+            }
+          }
+        })
       }
     })
 
@@ -188,6 +234,16 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
   const renderPill = (ev: CalendarEvent) => {
     const color = getSportColor(ev.game.sport || '')
     const fullWidth = isSm
+    
+    // For field reservations, get the time from the first matching reservation
+    let displayTime = (ev.game as any).time
+    if (ev.game.type === 'field' && !displayTime && ev.game.reservations) {
+      const userRes = ev.game.reservations.find(res => res.userName === profile?.name)
+      if (userRes) {
+        displayTime = userRes.time
+      }
+    }
+    
     return (
       <Button
         key={ev.game.id}
@@ -218,9 +274,9 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
         </Box>
         <Box sx={{ textAlign: 'left', ml: 1, flex: 1 }}>
           <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500 }}>{capitalize(ev.game.sport || '')}</div>
-          {/* prefer time if present, otherwise show date */}
-          {(ev.game as any).time ? (
-            <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: 'rgba(0,0,0,0.7)' }}>{(ev.game as any).time}</div>
+          {/* Show time if available, otherwise date */}
+          {displayTime ? (
+            <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: 'rgba(0,0,0,0.7)' }}>{displayTime}</div>
           ) : (
             ev.game.date && <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: 'rgba(0,0,0,0.7)' }}>{ev.game.date}</div>
           )}
@@ -438,10 +494,12 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
               </Box>
 
               {/* Date */}
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <AccessTimeIcon fontSize="small" color="primary" />
-                <Typography variant="body2">{selectedEvent.game.date}</Typography>
-              </Box>
+              {selectedEvent.game.date && (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <AccessTimeIcon fontSize="small" color="primary" />
+                  <Typography variant="body2">{selectedEvent.game.date}</Typography>
+                </Box>
+              )}
 
               {selectedEvent.game.time && (
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -462,26 +520,80 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
               </Box>
 
               {/* Host */}
-              <Typography variant="body2">
-                <strong>Host:</strong> {selectedEvent.game.host}
-              </Typography>
+              {selectedEvent.game.host && (
+                <Typography variant="body2">
+                  <strong>Host:</strong> {selectedEvent.game.host}
+                </Typography>
+              )}
 
               {/* Attendees */}
-              <Typography variant="body2">
-                <strong>Attendees:</strong> {selectedEvent.game.attendees}
-              </Typography>
+              {selectedEvent.game.attendees !== undefined && (
+                <Typography variant="body2">
+                  <strong>Attendees:</strong> {selectedEvent.game.attendees}
+                </Typography>
+              )}
 
               {selectedEvent.game.skill && (
                 <Typography variant="body2">
                   <strong>Level:</strong> {selectedEvent.game.skill}
                 </Typography>
               )}
+
+              {/* Show Field Reservations */}
+              {selectedEvent.game.type === 'field' && selectedEvent.game.reservations && selectedEvent.game.reservations.length > 0 && (
+                <>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Reservations
+                  </Typography>
+                  <List sx={{ bgcolor: '#f9f9f9', borderRadius: 1 }}>
+                    {selectedEvent.game.reservations.map(res => (
+                      <ListItem key={res.id} dense>
+                        <ListItemText
+                          primary={`${res.date} at ${res.time}`}
+                          secondary={`${res.userName}${res.notes ? ` - ${res.notes}` : ''}`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </>
+              )}
             </Stack>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsOpen(false)}>Close</Button>
-          {!selectedEvent?.isHosting && selectedEvent?.game.reservedByMe && (
+          {selectedEvent?.game.type === 'field' && (
+            <>
+              {selectedEvent.game.reservations?.some(res => res.userName === profile?.name) ? (
+                <Button
+                  onClick={() => {
+                    const userRes = selectedEvent.game.reservations?.find(res => res.userName === profile?.name)
+                    if (userRes) {
+                      setSelectedReservation(userRes)
+                      setShowReservationModal(true)
+                    }
+                  }}
+                  color="primary"
+                  variant="contained"
+                >
+                  Edit Reservation
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => {
+                    setSelectedReservation(null)
+                    setShowReservationModal(true)
+                  }}
+                  color="primary"
+                  variant="contained"
+                >
+                  Reserve Time
+                </Button>
+              )}
+            </>
+          )}
+          {!selectedEvent?.isHosting && selectedEvent?.game.reservedByMe && selectedEvent?.game.type !== 'field' && (
             <Button
               onClick={handleCancelReservation}
               color="error"
@@ -492,6 +604,18 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Field Reservation Modal */}
+      {selectedEvent?.game && (
+        <FieldReservationModal
+          open={showReservationModal}
+          onClose={() => {
+            setShowReservationModal(false)
+            setSelectedReservation(null)
+          }}
+          field={selectedEvent.game}
+        />
+      )}
     </Box>
   )
 }

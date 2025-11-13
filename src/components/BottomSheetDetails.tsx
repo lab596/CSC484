@@ -135,7 +135,7 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <FitnessCenterIcon fontSize="small" color="primary" />
                     <Typography variant="body2">
-                      Skill: <strong>{game.skill}</strong>
+                      Skill: <strong>{capitalize(game.skill)}</strong>
                     </Typography>
                   </Box>
                 )}
@@ -144,7 +144,7 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <PersonIcon fontSize="small" color="primary" />
                     <Typography variant="body2">
-                      Host: <strong>{game.host}</strong>
+                      Host: <strong>{capitalize(game.host)}</strong>
                     </Typography>
                   </Box>
                 )}
