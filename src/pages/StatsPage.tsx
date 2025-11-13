@@ -17,12 +17,23 @@ import {
   Chip,
   Divider,
   Slider,
-  Grid
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  LinearProgress,
+  Modal
 } from '@mui/material'
+import { keyframes } from '@mui/system'
+import DeleteIcon from '@mui/icons-material/Delete'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import SaveIcon from '@mui/icons-material/Save'
+import UndoIcon from '@mui/icons-material/Undo'
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import { useApp } from '../context/AppContext'
 import { Stats } from '../types'
+import { IconButton } from '@mui/material'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -85,8 +96,6 @@ const METRIC_LABELS: Record<string, string> = {
   steals: 'Steals',
   blocks: 'Blocks',
   turnovers: 'Turnovers',
-  fieldGoalsMade: 'FGM',
-  fieldGoalsAttempted: 'FGA',
   threePointers: '3PM',
   threePointersAttempted: '3PA',
   freeThrowsMade: 'FTM',
@@ -140,8 +149,6 @@ const SPORT_METRICS: Record<string, MetricDefinition[]> = {
     { id: 'steals', label: 'Steals', type: 'number', min: 0 },
     { id: 'blocks', label: 'Blocks', type: 'number', min: 0 },
     { id: 'turnovers', label: 'Turnovers', type: 'number', min: 0 },
-    { id: 'fieldGoalsMade', label: 'Field Goals Made', type: 'number', min: 0 },
-    { id: 'fieldGoalsAttempted', label: 'Field Goals Attempted', type: 'number', min: 0 },
     { id: 'threePointers', label: '3 Pointers Made', type: 'number', min: 0 },
     { id: 'threePointersAttempted', label: '3 Pointers Attempted', type: 'number', min: 0 },
     { id: 'freeThrowsMade', label: 'Free Throws Made', type: 'number', min: 0 },
@@ -213,6 +220,39 @@ const SPORT_METRICS: Record<string, MetricDefinition[]> = {
 
 const humanize = (value: string) => value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
+const rotatingBorder = keyframes`
+  0% {
+    border-top-color: rgba(0, 217, 255, 0.8);
+    border-right-color: rgba(0, 217, 255, 0.2);
+    border-bottom-color: rgba(0, 217, 255, 0.2);
+    border-left-color: rgba(0, 217, 255, 0.2);
+  }
+  25% {
+    border-top-color: rgba(0, 217, 255, 0.2);
+    border-right-color: rgba(0, 217, 255, 0.8);
+    border-bottom-color: rgba(0, 217, 255, 0.2);
+    border-left-color: rgba(0, 217, 255, 0.2);
+  }
+  50% {
+    border-top-color: rgba(0, 217, 255, 0.2);
+    border-right-color: rgba(0, 217, 255, 0.2);
+    border-bottom-color: rgba(0, 217, 255, 0.8);
+    border-left-color: rgba(0, 217, 255, 0.2);
+  }
+  75% {
+    border-top-color: rgba(0, 217, 255, 0.2);
+    border-right-color: rgba(0, 217, 255, 0.2);
+    border-bottom-color: rgba(0, 217, 255, 0.2);
+    border-left-color: rgba(0, 217, 255, 0.8);
+  }
+  100% {
+    border-top-color: rgba(0, 217, 255, 0.8);
+    border-right-color: rgba(0, 217, 255, 0.2);
+    border-bottom-color: rgba(0, 217, 255, 0.2);
+    border-left-color: rgba(0, 217, 255, 0.2);
+  }
+`
+
 const normalizeSportKey = (sport?: string) => {
   if (!sport) return 'other'
   return sport.toLowerCase()
@@ -226,7 +266,7 @@ const formatMetricLabel = (id: string) => {
 }
 
 export default function StatsPage() {
-  const { games, stats, initialized, addStat, profile } = useApp()
+  const { games, stats, initialized, addStat, deleteStat, profile } = useApp()
   const [tabValue, setTabValue] = useState(0)
   const [selectedGameId, setSelectedGameId] = useState('')
   const [note, setNote] = useState('')
@@ -240,6 +280,9 @@ export default function StatsPage() {
   const [mood, setMood] = useState<'Great' | 'Good' | 'Okay' | 'Tired' | 'Injured' | ''>('')
   const [weather, setWeather] = useState('')
   const [extraMetrics, setExtraMetrics] = useState<Record<string, string>>({})
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [statToDelete, setStatToDelete] = useState<Stats | null>(null)
+  const [selectedSportStats, setSelectedSportStats] = useState<typeof sportInsights[0] | null>(null)
 
   if (!initialized) {
     return <Box sx={{ p: 2 }}>Loading...</Box>
@@ -281,6 +324,34 @@ export default function StatsPage() {
       }
       return next
     })
+  }
+
+  const handleDeleteClick = (stat: Stats) => {
+    setStatToDelete(stat)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (statToDelete) {
+      deleteStat(statToDelete.id)
+      setDeleteDialogOpen(false)
+      setStatToDelete(null)
+    }
+  }
+
+  const handleResetForm = () => {
+    setSelectedGameId('')
+    setNote('')
+    setResult('')
+    setPerformanceRating(7)
+    setOpponent('')
+    setVenueType('')
+    setMinutesPlayed('')
+    setPositionPlayed('')
+    setEnergyLevel(6)
+    setMood('')
+    setWeather('')
+    setExtraMetrics({})
   }
 
   const validateMetricInputs = () => {
@@ -371,18 +442,7 @@ export default function StatsPage() {
     }
 
     addStat(stat)
-    setSelectedGameId('')
-    setNote('')
-    setResult('')
-    setPerformanceRating(7)
-    setOpponent('')
-    setVenueType('')
-    setMinutesPlayed('')
-    setPositionPlayed('')
-    setEnergyLevel(6)
-    setMood('')
-    setWeather('')
-    setExtraMetrics({})
+    handleResetForm()
   }
 
   const latestStatTime = useMemo(() => {
@@ -492,9 +552,6 @@ export default function StatsPage() {
 
       accumulate(entry.metrics, 'minutesPlayed', 'Minutes Played', stat.minutesPlayed)
       accumulate(entry.metrics, 'energyLevel', 'Energy Level', stat.energyLevel)
-      accumulate(entry.metrics, 'rebounds', formatMetricLabel('rebounds'), stat.rebounds)
-      accumulate(entry.metrics, 'threePointers', formatMetricLabel('threePointers'), stat.threePointers)
-      accumulate(entry.metrics, 'saves', formatMetricLabel('saves'), stat.saves)
 
       if (stat.extraMetrics) {
         Object.entries(stat.extraMetrics).forEach(([id, value]) => {
@@ -620,8 +677,246 @@ export default function StatsPage() {
     return chips
   }
 
+  const StatCharacterWindow = ({ sportData }: { sportData: typeof sportInsights[0] }) => {
+    const winRate = sportData.count > 0 
+      ? ((sportData.wins / sportData.count) * 100).toFixed(1)
+      : 0
+    
+    const getPerformanceLevel = (rating: number | null) => {
+      if (!rating) return 'NOVICE'
+      if (rating >= 9) return 'LEGENDARY'
+      if (rating >= 8) return 'EPIC'
+      if (rating >= 7) return 'RARE'
+      if (rating >= 6) return 'UNCOMMON'
+      return 'COMMON'
+    }
+
+    const getPerformanceColor = (rating: number | null) => {
+      if (!rating) return '#666'
+      if (rating >= 9) return '#FFD700'
+      if (rating >= 8) return '#FF6B9D'
+      if (rating >= 7) return '#00D9FF'
+      if (rating >= 6) return '#90EE90'
+      return '#A9A9A9'
+    }
+
+    return (
+      <Modal
+        open={!!sportData}
+        onClose={() => setSelectedSportStats(null)}
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            width: '90%',
+            maxWidth: 600,
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            border: '3px solid #00d9ff',
+            borderRadius: '12px',
+            boxShadow: '0 0 40px rgba(0, 217, 255, 0.5), inset 0 0 20px rgba(0, 217, 255, 0.1)',
+            padding: 3,
+            color: '#fff',
+            fontFamily: '"Press Start 2P", monospace, system-ui'
+          }}
+        >
+          {/* Close Button */}
+          <Button
+            onClick={() => setSelectedSportStats(null)}
+            sx={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              color: '#00d9ff',
+              fontSize: '12px',
+              border: '2px solid #00d9ff',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 217, 255, 0.1)',
+                boxShadow: '0 0 10px rgba(0, 217, 255, 0.5)'
+              }
+            }}
+          >
+            ✕
+          </Button>
+
+          {/* Header */}
+          <Typography
+            sx={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#00d9ff',
+              textShadow: '0 0 10px rgba(0, 217, 255, 0.8)',
+              mb: 2,
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: '2px'
+            }}
+          >
+            {sportData.sport === 'other' ? 'OTHER SPORTS' : humanize(sportData.sport)}
+          </Typography>
+
+          {/* Level Badge */}
+          <Box
+            sx={{
+              textAlign: 'center',
+              mb: 3,
+              padding: '12px',
+              border: `2px solid ${getPerformanceColor(sportData.averageRating)}`,
+              borderRadius: '8px',
+              backgroundColor: `${getPerformanceColor(sportData.averageRating)}20`
+            }}
+          >
+            <Typography sx={{ fontSize: '14px', color: '#888' }}>LEVEL</Typography>
+            <Typography
+              sx={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: getPerformanceColor(sportData.averageRating),
+                textShadow: `0 0 10px ${getPerformanceColor(sportData.averageRating)}`
+              }}
+            >
+              {getPerformanceLevel(sportData.averageRating)}
+            </Typography>
+          </Box>
+
+          {/* Stats Grid */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {/* Performance Rating */}
+            <Grid item xs={6}>
+              <Box sx={{ padding: '12px', border: '2px solid #00d9ff', borderRadius: '4px' }}>
+                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>RATING</Typography>
+                <Typography sx={{ fontSize: '18px', fontWeight: 'bold', color: '#00ff88' }}>
+                  {sportData.averageRating ? `${sportData.averageRating.toFixed(1)}/10` : 'N/A'}
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={(sportData.averageRating || 0) * 10}
+                  sx={{
+                    mt: 1,
+                    height: 6,
+                    backgroundColor: '#0a2647',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: '#00ff88'
+                    }
+                  }}
+                />
+              </Box>
+            </Grid>
+
+            {/* Sessions Completed */}
+            <Grid item xs={6}>
+              <Box sx={{ padding: '12px', border: '2px solid #ff6b9d', borderRadius: '4px' }}>
+                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>SESSIONS</Typography>
+                <Typography sx={{ fontSize: '18px', fontWeight: 'bold', color: '#ff6b9d' }}>
+                  {sportData.count}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Win Rate */}
+            <Grid item xs={6}>
+              <Box sx={{ padding: '12px', border: '2px solid #ffd700', borderRadius: '4px' }}>
+                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>WIN RATE</Typography>
+                <Typography sx={{ fontSize: '18px', fontWeight: 'bold', color: '#ffd700' }}>
+                  {winRate}%
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={Number(winRate)}
+                  sx={{
+                    mt: 1,
+                    height: 6,
+                    backgroundColor: '#0a2647',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: '#ffd700'
+                    }
+                  }}
+                />
+              </Box>
+            </Grid>
+
+            {/* Record */}
+            <Grid item xs={6}>
+              <Box sx={{ padding: '12px', border: '2px solid #90ee90', borderRadius: '4px' }}>
+                <Typography sx={{ fontSize: '10px', color: '#888', mb: 1 }}>RECORD</Typography>
+                <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+                  <Typography sx={{ fontSize: '14px', color: '#90ee90', fontWeight: 'bold' }}>
+                    W:{sportData.wins}
+                  </Typography>
+                  <Typography sx={{ fontSize: '14px', color: '#ff6b6b', fontWeight: 'bold' }}>
+                    L:{sportData.losses}
+                  </Typography>
+                  <Typography sx={{ fontSize: '14px', color: '#a0a0a0', fontWeight: 'bold' }}>
+                    D:{sportData.draws}
+                  </Typography>
+                </Stack>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Metrics Section */}
+          {sportData.metrics.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontSize: '12px', color: '#888', mb: 2, textTransform: 'uppercase' }}>
+                📊 Performance Metrics
+              </Typography>
+              <Stack spacing={1.5}>
+                {sportData.metrics.slice(0, 8).map(metric => {
+                  const avgVal = metric.count > 0 ? metric.total / metric.count : 0
+                  const maxPossible = Math.max(100, metric.total)
+                  const percentage = (avgVal / maxPossible) * 100
+                  
+                  return (
+                    <Box key={metric.id}>
+                      <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                        <Typography sx={{ fontSize: '11px', color: '#00d9ff', fontWeight: 'bold' }}>
+                          {metric.label}
+                        </Typography>
+                        <Typography sx={{ fontSize: '11px', color: '#ffd700' }}>
+                          {metric.count > 1 ? `${avgVal.toFixed(1)} avg` : metric.total}
+                        </Typography>
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min(percentage, 100)}
+                        sx={{
+                          height: 8,
+                          backgroundColor: '#0a2647',
+                          borderRadius: '4px',
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: '#00d9ff',
+                            boxShadow: '0 0 10px rgba(0, 217, 255, 0.5)'
+                          }
+                        }}
+                      />
+                    </Box>
+                  )
+                })}
+              </Stack>
+            </Box>
+          )}
+
+          {/* Footer Message */}
+          <Box
+            sx={{
+              textAlign: 'center',
+              padding: '12px',
+              borderTop: '2px solid #00d9ff',
+              marginTop: 2,
+              fontSize: '10px',
+              color: '#888',
+              fontStyle: 'italic'
+            }}
+          >
+            Keep pushing your limits to unlock higher achievements!
+          </Box>
+        </Box>
+      </Modal>
+    )
+  }
+
   return (
-    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
+    <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5', overflow: 'hidden' }}>
       <Paper sx={{ borderBottom: '1px solid #e0e0e0' }}>
         <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
           <Tab label="Log Stats" id="stats-tab-0" aria-controls="stats-tabpanel-0" />
@@ -629,8 +924,9 @@ export default function StatsPage() {
         </Tabs>
       </Paper>
 
-      <TabPanel value={tabValue} index={0}>
-        <Box sx={{ pb: 10 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', backgroundColor: '#f5f5f5' }}>
+        <TabPanel value={tabValue} index={0}>
+          <Box sx={{ pb: 10 }}>
           <Card sx={{ mb: 4 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>
@@ -790,15 +1086,25 @@ export default function StatsPage() {
                 sx={{ my: 3 }}
               />
 
-              <Button
-                variant="contained"
-                endIcon={<SaveIcon />}
-                onClick={handleSaveStats}
-                disabled={!selectedGame || !note.trim() || !result}
-                fullWidth
-              >
-                Save Stats Entry
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="contained"
+                  endIcon={<SaveIcon />}
+                  onClick={handleSaveStats}
+                  disabled={!selectedGame || !note.trim() || !result}
+                  fullWidth
+                >
+                  Save Stats Entry
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<UndoIcon />}
+                  onClick={handleResetForm}
+                  fullWidth
+                >
+                  Clear
+                </Button>
+              </Stack>
             </CardContent>
           </Card>
 
@@ -812,7 +1118,17 @@ export default function StatsPage() {
               </Typography>
             ) : (
               sortedStats.map(stat => (
-                <ListItem key={stat.id} divider alignItems="flex-start">
+                <ListItem key={stat.id} divider alignItems="flex-start" secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={() => handleDeleteClick(stat)}
+                    color="error"
+                    size="small"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                }>
                   <ListItemText
                     primary={stat.gameTitle}
                     secondary={
@@ -846,11 +1162,11 @@ export default function StatsPage() {
               ))
             )}
           </List>
-        </Box>
-      </TabPanel>
+          </Box>
+        </TabPanel>
 
-      <TabPanel value={tabValue} index={1}>
-        <Box sx={{ pb: 10 }}>
+        <TabPanel value={tabValue} index={1}>
+          <Box sx={{ pb: 10 }}>
           {stats.length === 0 ? (
             <Typography variant="body2" color="textSecondary">
               Start logging stats to see insights here
@@ -902,7 +1218,57 @@ export default function StatsPage() {
               </Card>
 
               {sportInsights.map(summary => (
-                <Card key={summary.sport}>
+                <Card 
+                  key={summary.sport}
+                  onClick={() => setSelectedSportStats(summary)}
+                  sx={{
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 24px rgba(0, 217, 255, 0.3)',
+                      backgroundColor: '#f9f9f9'
+                    }
+                  }}
+                >
+                  {/* Clickable Indicator Badge */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      backgroundColor: 'rgba(0, 217, 255, 0.1)',
+                      border: '2px solid',
+                      borderColor: 'rgba(0, 217, 255, 0.4)',
+                      borderRadius: '20px',
+                      padding: '4px 10px',
+                      animation: `${rotatingBorder} 2s linear infinite`
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor: '#00d9ff',
+                        boxShadow: '0 0 8px rgba(0, 217, 255, 0.8)'
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#00d9ff',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      CLICK
+                    </Typography>
+                  </Box>
                   <CardContent>
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
                       {summary.sport === 'other' ? 'Other Sports' : humanize(summary.sport)}
@@ -977,8 +1343,43 @@ export default function StatsPage() {
               )}
             </Stack>
           )}
-        </Box>
-      </TabPanel>
+          </Box>
+        </TabPanel>
+      </Box>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false)
+          setStatToDelete(null)
+        }}
+      >
+        <DialogTitle>Delete Stat Entry</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete "{statToDelete?.gameTitle}"? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDeleteDialogOpen(false)
+              setStatToDelete(null)
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {selectedSportStats && <StatCharacterWindow sportData={selectedSportStats} />}
     </Box>
   )
 }
