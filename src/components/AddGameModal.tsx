@@ -30,7 +30,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   const [sport, setSport] = useState('')
   const [date, setDate] = useState(todayOffset(0))
   const [time, setTime] = useState('10:00')
-  const [skill, setSkill] = useState('intermediate')
+  const [skill, setSkill] = useState('Intermediate')
   const [address, setAddress] = useState('')
   const [selectedLat, setSelectedLat] = useState<number | null>(null)
   const [selectedLng, setSelectedLng] = useState<number | null>(null)
@@ -50,7 +50,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
     setSport('')
     setDate(todayOffset(0))
     setTime('10:00')
-    setSkill('intermediate')
+    setSkill('Intermediate')
     setAddress('')
     setSelectedLat(null)
     setSelectedLng(null)
@@ -206,10 +206,10 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
                     setIsDirty(true)
                   }}
                 >
-                  <MenuItem value="beginner">Beginner</MenuItem>
-                  <MenuItem value="intermediate">Intermediate</MenuItem>
-                  <MenuItem value="advanced">Advanced</MenuItem>
-                  <MenuItem value="all">All Levels</MenuItem>
+                  <MenuItem value="Beginner">Beginner</MenuItem>
+                  <MenuItem value="Intermediate">Intermediate</MenuItem>
+                  <MenuItem value="Advanced">Advanced</MenuItem>
+                  <MenuItem value="All">All Levels</MenuItem>
                 </TextField>
               </>
             )}
