@@ -25,6 +25,7 @@ import EventIcon from '@mui/icons-material/Event'
 import PersonIcon from '@mui/icons-material/Person'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
+import CalendarView from '../components/CalendarView'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -48,7 +49,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function GamesPage() {
-  const { games, profile, initialized, deleteGame } = useApp()
+  const { games, profile, initialized, deleteGame, updateGame } = useApp()
   const [tabValue, setTabValue] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null)
@@ -59,9 +60,10 @@ export default function GamesPage() {
     [games, profile?.name]
   )
 
-  // Games I'm attending (either reserved by me, or hosted by someone else)
+  // Games I'm attending: games I've reserved OR am hosting
+  // Shows in both Hosting and Attending tabs, but buttons disabled for hosted games
   const attendingGames = useMemo(
-    () => games.filter(g => g.reservedByMe || g.host !== profile?.name),
+    () => games.filter(g => g.reservedByMe || g.host === profile?.name),
     [games, profile?.name]
   )
 
@@ -133,13 +135,19 @@ export default function GamesPage() {
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
       <Paper sx={{ borderBottom: '1px solid #e0e0e0' }}>
         <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-          <Tab label="Hosting" id="game-tab-0" aria-controls="game-tabpanel-0" />
-          <Tab label="Attending" id="game-tab-1" aria-controls="game-tabpanel-1" />
+            <Tab label="Calendar" id="game-tab-0" aria-controls="game-tabpanel-0" />
+            <Tab label="Hosting" id="game-tab-1" aria-controls="game-tabpanel-1" />
+            <Tab label="Attending" id="game-tab-2" aria-controls="game-tabpanel-2" />
         </Tabs>
       </Paper>
 
-      {/* Hosting Tab */}
-      <TabPanel value={tabValue} index={0}>
+        {/* Calendar Tab */}
+        <TabPanel value={tabValue} index={0}>
+          <CalendarView games={games} profile={profile} />
+        </TabPanel>
+
+        {/* Hosting Tab */}
+        <TabPanel value={tabValue} index={1}>
         {hostedGames.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography color="textSecondary">You're not hosting any games yet</Typography>
@@ -186,8 +194,8 @@ export default function GamesPage() {
         )}
       </TabPanel>
 
-      {/* Attending Calendar Tab */}
-      <TabPanel value={tabValue} index={1}>
+  {/* Attending Calendar Tab */}
+  <TabPanel value={tabValue} index={2}>
         {attendingGames.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography color="textSecondary">No games to attend yet</Typography>
@@ -235,15 +243,81 @@ export default function GamesPage() {
                             </Typography>
                           </Box>
                           {game.reservedByMe && (
-                            <Chip
-                              label="Attending"
-                              color="success"
-                              size="small"
-                              sx={{ ml: 1 }}
-                            />
+                            <Stack direction="row" alignItems="center" gap={1}>
+                              <Chip
+                                label="Attending"
+                                color="success"
+                                size="small"
+                                sx={{ ml: 1 }}
+                              />
+                            </Stack>
                           )}
                         </Box>
                       </CardContent>
+                      {/* Actions for attending items */}
+                      {game.host === profile?.name ? (
+                        // User is hosting this game - show disabled message
+                        <CardActions>
+                          <Button
+                            size="small"
+                            disabled
+                            title="You are hosting this game - manage from Hosting tab"
+                          >
+                            You are hosting this
+                          </Button>
+                        </CardActions>
+                      ) : game.reservedByMe ? (
+                        // User is attending - show cancel button
+                        <CardActions>
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            onClick={() => {
+                              // If this is a synthesized field reservation entry (from gamesByDate),
+                              // find the parent field and remove the reservation. Otherwise toggle reservedByMe.
+                              if (game.type === 'field') {
+                                // Find the original field which contains this reservation id
+                                const parentField = games.find(f => f.type === 'field' && f.reservations?.some(r => r.id === game.id))
+                                if (parentField && parentField.reservations) {
+                                  const updatedReservations = parentField.reservations.filter(r => r.id !== game.id)
+                                  updateGame(parentField.id, {
+                                    reservations: updatedReservations,
+                                    // if the user still has other reservations on this field this stays true
+                                    reservedByMe: updatedReservations.some(r => r.userName === (profile?.name || '')),
+                                    attendees: Math.max(0, (parentField.attendees || 0) - 1)
+                                  })
+                                }
+                              } else {
+                                updateGame(game.id, {
+                                  reservedByMe: false,
+                                  attendees: Math.max(0, (game.attendees || 0) - 1)
+                                })
+                              }
+                            }}
+                          >
+                            Cancel Reservation
+                          </Button>
+                        </CardActions>
+                      ) : (
+                        // User hasn't reserved yet - show reserve button
+                        <CardActions>
+                          <Button
+                            size="small"
+                            color="success"
+                            variant="contained"
+                            onClick={() => {
+                              // Reserve a spot for a normal game (not a field reservation)
+                              updateGame(game.id, {
+                                reservedByMe: true,
+                                attendees: (game.attendees || 0) + 1
+                              })
+                            }}
+                          >
+                            Reserve Spot
+                          </Button>
+                        </CardActions>
+                      )}
                     </Card>
                   ))}
                 </Stack>
