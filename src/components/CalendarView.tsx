@@ -21,7 +21,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Game } from '../types'
 import { useApp } from '../context/AppContext'
-import { getSportColor, getSportIconSVG } from '../utils'
+import { getSportColor, getSportIconSVG, capitalize } from '../utils'
 
 interface CalendarViewProps {
   games: Game[]
@@ -217,7 +217,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
           />
         </Box>
         <Box sx={{ textAlign: 'left', ml: 1, flex: 1 }}>
-          <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500 }}>{ev.game.sport}</div>
+          <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500 }}>{capitalize(ev.game.sport || '')}</div>
           {/* prefer time if present, otherwise show date */}
           {(ev.game as any).time ? (
             <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: 'rgba(0,0,0,0.7)' }}>{(ev.game as any).time}</div>
@@ -430,7 +430,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
               {/* Sport */}
               <Box>
                 <Chip
-                  label={selectedEvent.game.sport}
+                  label={`Sport: ${capitalize(selectedEvent.game.sport || '')}`}
                   size="small"
                   color="primary"
                   variant="outlined"
@@ -442,6 +442,13 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
                 <AccessTimeIcon fontSize="small" color="primary" />
                 <Typography variant="body2">{selectedEvent.game.date}</Typography>
               </Box>
+
+              {selectedEvent.game.time && (
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <AccessTimeIcon fontSize="small" color="primary" />
+                  <Typography variant="body2">{selectedEvent.game.time}</Typography>
+                </Box>
+              )}
 
               {/* Location */}
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>

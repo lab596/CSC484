@@ -23,6 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Game } from '../types'
 import { useApp } from '../context/AppContext'
+import { capitalize } from '../utils'
 import FieldReservationModal from './FieldReservationModal'
 
 interface BottomSheetDetailsProps {
@@ -108,7 +109,7 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
                       Sport:
                     </Typography>
                     <Chip
-                      label={game.sport}
+                      label={capitalize(game.sport)}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -120,6 +121,13 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <EventIcon fontSize="small" color="primary" />
                     <Typography variant="body2">{game.date}</Typography>
+                  </Box>
+                )}
+
+                {game.time && (
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <AccessTimeIcon fontSize="small" color="primary" />
+                    <Typography variant="body2">{game.time}</Typography>
                   </Box>
                 )}
 

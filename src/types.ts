@@ -8,6 +8,7 @@ export interface Game {
   lat: number;
   lng: number;
   date?: string;
+  time?: string;
   host?: string;
   skill?: string;
   type: "game" | "field";

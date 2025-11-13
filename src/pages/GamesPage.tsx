@@ -25,6 +25,7 @@ import EventIcon from '@mui/icons-material/Event'
 import PersonIcon from '@mui/icons-material/Person'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
+import { capitalize } from '../utils'
 import CalendarView from '../components/CalendarView'
 
 interface TabPanelProps {
@@ -169,7 +170,10 @@ export default function GamesPage() {
                           size="small"
                           variant="outlined"
                         />
-                        <Chip label={game.sport} size="small" color="primary" />
+                        {game.time && (
+                          <Chip label={game.time} size="small" variant="outlined" />
+                        )}
+                        <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" />
                         <Chip label={`${game.attendees} attendees`} size="small" variant="outlined" />
                       </Stack>
                       <Typography variant="body2" color="textSecondary">
@@ -227,9 +231,12 @@ export default function GamesPage() {
                               {game.title}
                             </Typography>
                             <Stack direction="row" gap={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-                              <Chip label={game.sport} size="small" color="primary" variant="outlined" />
+                              <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" variant="outlined" />
+                              {game.time && (
+                                <Chip label={`${game.time}`} size="small" variant="outlined" />
+                              )}
                               {game.skill && (
-                                <Chip label={`Level: ${game.skill}`} size="small" variant="outlined" />
+                                <Chip label={`Level: ${capitalize(game.skill)}`} size="small" variant="outlined" />
                               )}
                             </Stack>
                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mb: 0.5 }}>

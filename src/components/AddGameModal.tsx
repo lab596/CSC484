@@ -29,6 +29,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   const [title, setTitle] = useState('')
   const [sport, setSport] = useState('')
   const [date, setDate] = useState(todayOffset(0))
+  const [time, setTime] = useState('10:00')
   const [skill, setSkill] = useState('intermediate')
   const [address, setAddress] = useState('')
   const [selectedLat, setSelectedLat] = useState<number | null>(null)
@@ -48,6 +49,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
     setTitle('')
     setSport('')
     setDate(todayOffset(0))
+    setTime('10:00')
     setSkill('intermediate')
     setAddress('')
     setSelectedLat(null)
@@ -96,6 +98,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
         lat,
         lng,
         date: itemType === 'game' ? date : undefined,
+        time: itemType === 'game' ? time : undefined,
         skill: itemType === 'game' ? skill : undefined,
         host: profile?.name || 'You',
         type: itemType,
@@ -176,6 +179,18 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
                   value={date}
                   onChange={(e) => {
                     setDate(e.target.value)
+                    setIsDirty(true)
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  type="time"
+                  fullWidth
+                  label="Time"
+                  value={time}
+                  onChange={(e) => {
+                    setTime(e.target.value)
                     setIsDirty(true)
                   }}
                   InputLabelProps={{ shrink: true }}
