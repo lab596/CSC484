@@ -870,6 +870,21 @@ export default function StatsPage() {
                 </Grid>
 
                 <Grid item xs={6}>
+                  <Box sx={{ textAlign: 'right', pr: 4 }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                      AVERAGE ENERGY
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2', mt: 0.5 }}>
+                      {(() => {
+                        const energyMetric = sportData.metrics.find(m => m.id === 'energyLevel')
+                        if (!energyMetric || energyMetric.count === 0) return 'N/A'
+                        return `${(energyMetric.total / energyMetric.count).toFixed(1)}/10`
+                      })()}
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={6}>
                   <Box>
                     <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
                       SESSIONS
@@ -883,7 +898,7 @@ export default function StatsPage() {
                 {isCompetitiveSport(sportData.sport) && (
                   <>
                     <Grid item xs={6}>
-                      <Box>
+                      <Box sx={{ textAlign: 'right', pr: 4 }}>
                         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
                           WIN RATE
                         </Typography>
@@ -895,10 +910,8 @@ export default function StatsPage() {
 
                     <Grid item xs={12}>
                       <Box>
-                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
-                          RECORD
-                        </Typography>
-                        <Stack direction="row" spacing={1}>
+
+                        <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', ml: -4 }}>
                           <Chip 
                             label={`W ${sportData.wins}`} 
                             sx={{ 
@@ -938,7 +951,10 @@ export default function StatsPage() {
                       Performance Metrics
                     </Typography>
                     <Stack spacing={1.5}>
-                      {sportData.metrics.slice(0, 8).map(metric => {
+                      {sportData.metrics
+                        .filter(metric => metric.id !== 'energyLevel')
+                        .slice(0, 8)
+                        .map(metric => {
                         const avgVal = metric.count > 0 ? metric.total / metric.count : 0
                         const maxPossible = Math.max(100, metric.total)
                         const percentage = (avgVal / maxPossible) * 100
@@ -1310,7 +1326,9 @@ export default function StatsPage() {
                     </Stack>
                     {summary.metrics.length > 0 && (
                       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                        {summary.metrics.map(metric => (
+                        {summary.metrics
+                          .filter(metric => metric.id !== 'energyLevel')
+                          .map(metric => (
                           <Chip
                             key={metric.id}
                             label={`${metric.label}: ${metric.total}`}
