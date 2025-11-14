@@ -48,3 +48,4 @@ Built-in address lookup includes these locations. For addresses outside SLO, the
 ## Team Contributions
    - Rohan: Initial project setup (wireframe for each of the pages), map page (detail, modals, filters, Leaflet for map w/geocoding api for address completion, games, fields, etc...), connection to games page to serve information inputted
    - Antonio: Implemented the Games Page. Implemented Calendar. Incorporated persistent styles to match the overall app.
+   - Venkata: I implemented the Social page. I also assisted in refining various design elements & features throughout the app as a whole.
