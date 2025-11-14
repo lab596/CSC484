@@ -25,7 +25,7 @@ import EventIcon from '@mui/icons-material/Event'
 import PersonIcon from '@mui/icons-material/Person'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
-import { capitalize } from '../utils'
+import { capitalize, formatTimeTo12 } from '../utils'
 import CalendarView from '../components/CalendarView'
 
 interface TabPanelProps {
@@ -54,12 +54,51 @@ export default function GamesPage() {
   const [tabValue, setTabValue] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null)
+  const [cancelReservationOpen, setCancelReservationOpen] = useState(false)
+  const [reservationToCancel, setReservationToCancel] = useState<Game | null>(null)
+
 
   // Games hosted by me
   const hostedGames = useMemo(
     () => games.filter(g => g.host === profile?.name),
     [games, profile?.name]
   )
+
+  const handleCancelReservationClick = (game: Game) => {
+  setReservationToCancel(game)
+  setCancelReservationOpen(true)
+}
+
+const handleConfirmCancelReservation = () => {
+  if (!reservationToCancel) return
+
+  const game = reservationToCancel
+
+  if (game.type === 'field') {
+    const parentField = games.find(
+      f => f.type === 'field' && f.reservations?.some(r => r.id === game.id)
+    )
+    if (parentField && parentField.reservations) {
+      const updatedReservations = parentField.reservations.filter(r => r.id !== game.id)
+
+      updateGame(parentField.id, {
+        reservations: updatedReservations,
+        reservedByMe: updatedReservations.some(
+          r => r.userName === (profile?.name || '')
+        ),
+        attendees: Math.max(0, (parentField.attendees || 0) - 1)
+      })
+    }
+  } else {
+    updateGame(game.id, {
+      reservedByMe: false,
+      attendees: Math.max(0, (game.attendees || 0) - 1)
+    })
+  }
+
+  setCancelReservationOpen(false)
+  setReservationToCancel(null)
+}
 
   // Games I'm attending: games I've reserved OR am hosting
   // Shows in both Hosting and Attending tabs, but buttons disabled for hosted games
@@ -90,7 +129,7 @@ export default function GamesPage() {
             // Create a reservation entry that looks like a game
             const reservationEntry: Game = {
               id: res.id,
-              title: `${field.title} at ${res.time}`,
+              title: `${field.title} at ${formatTimeTo12(res.time)}`,
               sport: field.sport,
               address: field.address,
               lat: field.lat,
@@ -171,7 +210,7 @@ export default function GamesPage() {
                           variant="outlined"
                         />
                         {game.time && (
-                          <Chip label={game.time} size="small" variant="outlined" />
+                          <Chip label={formatTimeTo12(game.time)} size="small" variant="outlined" />
                         )}
                         <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" />
                         <Chip label={`${game.attendees} attendees`} size="small" variant="outlined" />
@@ -186,7 +225,7 @@ export default function GamesPage() {
                   <Button
                     size="small"
                     color="error"
-                    startIcon={<DeleteIcon />}
+                    variant="outlined"
                     onClick={() => handleDeleteClick(game)}
                   >
                     Cancel Game
@@ -231,9 +270,9 @@ export default function GamesPage() {
                               {game.title}
                             </Typography>
                             <Stack direction="row" gap={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-                              <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" variant="outlined" />
+                              <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" />
                               {game.time && (
-                                <Chip label={`${game.time}`} size="small" variant="outlined" />
+                                <Chip label={`${formatTimeTo12(game.time)}`} size="small" variant="outlined" />
                               )}
                               {game.skill && (
                                 <Chip label={`Level: ${capitalize(game.skill)}`} size="small" variant="outlined" />
@@ -280,28 +319,8 @@ export default function GamesPage() {
                             size="small"
                             color="error"
                             variant="outlined"
-                            onClick={() => {
-                              // If this is a synthesized field reservation entry (from gamesByDate),
-                              // find the parent field and remove the reservation. Otherwise toggle reservedByMe.
-                              if (game.type === 'field') {
-                                // Find the original field which contains this reservation id
-                                const parentField = games.find(f => f.type === 'field' && f.reservations?.some(r => r.id === game.id))
-                                if (parentField && parentField.reservations) {
-                                  const updatedReservations = parentField.reservations.filter(r => r.id !== game.id)
-                                  updateGame(parentField.id, {
-                                    reservations: updatedReservations,
-                                    // if the user still has other reservations on this field this stays true
-                                    reservedByMe: updatedReservations.some(r => r.userName === (profile?.name || '')),
-                                    attendees: Math.max(0, (parentField.attendees || 0) - 1)
-                                  })
-                                }
-                              } else {
-                                updateGame(game.id, {
-                                  reservedByMe: false,
-                                  attendees: Math.max(0, (game.attendees || 0) - 1)
-                                })
-                              }
-                            }}
+                            onClick={() => handleCancelReservationClick(game)}
+
                           >
                             Cancel Reservation
                           </Button>
@@ -313,6 +332,7 @@ export default function GamesPage() {
                             size="small"
                             color="success"
                             variant="contained"
+                            
                             onClick={() => {
                               // Reserve a spot for a normal game (not a field reservation)
                               updateGame(game.id, {
@@ -349,6 +369,30 @@ export default function GamesPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <Dialog
+  open={cancelReservationOpen}
+  onClose={() => setCancelReservationOpen(false)}
+>
+  <DialogTitle>Cancel Reservation</DialogTitle>
+  <DialogContent>
+    <Typography sx={{ mt: 2 }}>
+      Cancel your reservation for "{reservationToCancel?.title}"?
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setCancelReservationOpen(false)}>
+      Keep Reservation
+    </Button>
+    <Button
+      onClick={handleConfirmCancelReservation}
+      color="error"
+      variant="contained"
+    >
+      Cancel Reservation
+    </Button>
+  </DialogActions>
+</Dialog>
+
     </Box>
   )
 }
