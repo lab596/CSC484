@@ -250,7 +250,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
       <Button
         key={ev.game.id}
         size={isSm ? 'medium' : 'small'}
-        fullWidth={fullWidth}
+        fullWidth={true}
         variant="contained"
         sx={{
           backgroundColor: ev.isHosting ? '#ffffffff' : '#1976D2',
@@ -272,20 +272,20 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
         onClick={() => handleEventClick(ev)}
       >
         {/* sport icon from SVG */}
-        <Box sx={{ width: 28, height: 28, display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ width: 28, height: 28, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <img
             src={`data:image/svg+xml;utf8,${encodeURIComponent(getSportIconSVG(ev.game.sport || ''))}`}
             alt={ev.game.sport}
             style={{ width: 28, height: 28, borderRadius: 4 }}
           />
         </Box>
-        <Box sx={{ textAlign: 'left', ml: 1, flex: 1 }}>
-          <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500, color: ev.isHosting ? '#000' : '#fff'}}>{capitalize(ev.game.sport || '')}</div>
+        <Box sx={{ textAlign: 'left', ml: 1, flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500, color: ev.isHosting ? '#000' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{capitalize(ev.game.sport || '')}</div>
           {/* Show time if available, otherwise date */}
               {formattedTime ? (
-                <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: ev.isHosting ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)' }}>{formattedTime}</div>
+                <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: ev.isHosting ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formattedTime}</div>
               ) : (
-                ev.game.date && <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: ev.isHosting ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)' }}>{ev.game.date}</div>
+                ev.game.date && <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: ev.isHosting ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.game.date}</div>
               )}
         </Box>
       </Button>
@@ -391,7 +391,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
             <Grid container spacing={0.5} sx={{ mb: 1 }}>
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                 <Grid item xs={12 / 7} key={day}>
-                  <Box sx={{ textAlign: 'center', fontWeight: 'bold', py: 1 }}>
+                  <Box sx={{ textAlign: 'left', fontWeight: 'bold', py: 1, pl: 0.5 }}>
                     {day}
                   </Box>
                 </Grid>
@@ -411,12 +411,12 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
                         p: 0.5,
                         backgroundColor: day ? '#fff' : '#f5f5f5',
                         border: '0.5px solid #e0e0e0',
-                        overflow: 'auto',
-                        maxHeight: '150px'
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}
                     >
                       {day && (
-                        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <>
                           <Typography
                             variant="caption"
                             sx={{
@@ -428,18 +428,41 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
                             {day}
                           </Typography>
 
-                          <Stack spacing={0.3} sx={{ flex: 1, overflow: 'auto' }}>
-                            {dayEvents.map((event, eventIdx) => {
-                              const evDate = event.game.date ? new Date(event.game.date + 'T00:00:00') : null
-                              const isPast = evDate ? evDate < new Date(new Date().toDateString()) : false
-                              return (
-                                <Box key={eventIdx} sx={{ opacity: isPast ? 0.5 : 1, mt: 0.4 }}>
-                                  {renderPill(event)}
-                                </Box>
-                              )
-                            })}
-                          </Stack>
-                        </Box>
+                          {dayEvents.length > 0 ? (
+                            <Stack spacing={0.2} sx={{ flex: 1, justifyContent: 'flex-start', width: '100%' }}>
+                              {dayEvents.slice(0, 2).map((event, eventIdx) => {
+                                const evDate = event.game.date ? new Date(event.game.date + 'T00:00:00') : null
+                                const isPast = evDate ? evDate < new Date(new Date().toDateString()) : false
+                                return (
+                                  <Box key={eventIdx} sx={{ opacity: isPast ? 0.5 : 1, width: '100%' }}>
+                                    {renderPill(event)}
+                                  </Box>
+                                )
+                              })}
+                              
+                              {dayEvents.length > 2 && (
+                                <Button
+                                  size="small"
+                                  onClick={() => openDayDetails(dateStr)}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontSize: '0.7rem',
+                                    py: 0.3,
+                                    color: '#1976d2',
+                                    width: '100%',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                                    }
+                                  }}
+                                >
+                                  +{dayEvents.length - 2} more
+                                </Button>
+                              )}
+                            </Stack>
+                          ) : (
+                            <Box sx={{ flex: 1 }} />
+                          )}
+                        </>
                       )}
                     </Paper>
                   </Grid>
