@@ -26,6 +26,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Game, FieldReservation } from '../types'
 import { useApp } from '../context/AppContext'
 import { getSportColor, getSportIconSVG, capitalize } from '../utils'
+import { formatTimeTo12 } from '../utils'
 import FieldReservationModal from './FieldReservationModal'
 
 interface CalendarViewProps {
@@ -243,6 +244,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
         displayTime = userRes.time
       }
     }
+        const formattedTime = displayTime ? formatTimeTo12(displayTime) : ''
     
     return (
       <Button
@@ -251,16 +253,21 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
         fullWidth={fullWidth}
         variant="contained"
         sx={{
-          backgroundColor: ev.isHosting ? '#1976D2' : '#4CAF50',
+          backgroundColor: ev.isHosting ? '#ffffffff' : '#1976D2',
+          border: ev.isHosting ? `0.5px solid #1976D2` : 'none',
+          color: ev.isHosting ? '#000' : '#fff',
           textTransform: 'none',
-          fontSize: isSm ? '0.95rem' : '0.8rem',
+          fontSize: isSm ? '0.95rem' : '0.95rem',
           display: 'flex',
           gap: 1,
           alignItems: 'center',
           justifyContent: 'flex-start',
           whiteSpace: 'normal',
           textAlign: 'left',
-          py: isSm ? 1 : 0.5
+          py: isSm ? 1 : 0.5,
+          '&:hover': {
+            backgroundColor: ev.isHosting ? '#ffffffff' : '#1976D2'
+          }
         }}
         onClick={() => handleEventClick(ev)}
       >
@@ -273,13 +280,13 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
           />
         </Box>
         <Box sx={{ textAlign: 'left', ml: 1, flex: 1 }}>
-          <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500 }}>{capitalize(ev.game.sport || '')}</div>
+          <div style={{ fontSize: isSm ? '0.95rem' : '0.75rem', fontWeight: isSm ? 600 : 500, color: ev.isHosting ? '#000' : '#fff'}}>{capitalize(ev.game.sport || '')}</div>
           {/* Show time if available, otherwise date */}
-          {displayTime ? (
-            <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: 'rgba(0,0,0,0.7)' }}>{displayTime}</div>
-          ) : (
-            ev.game.date && <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: 'rgba(0,0,0,0.7)' }}>{ev.game.date}</div>
-          )}
+              {formattedTime ? (
+                <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: ev.isHosting ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)' }}>{formattedTime}</div>
+              ) : (
+                ev.game.date && <div style={{ fontSize: isSm ? '0.85rem' : '0.65rem', color: ev.isHosting ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)' }}>{ev.game.date}</div>
+              )}
         </Box>
       </Button>
     )
@@ -321,24 +328,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
             </IconButton>
           </Box>
 
-          {/* Week Navigation (visible on all screen sizes) */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f5f5f5', p: 1, borderRadius: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => setWeekBaseDate(new Date(weekBaseDate.getFullYear(), weekBaseDate.getMonth(), weekBaseDate.getDate() - 7))}
-            >
-              <ChevronLeftIcon fontSize="small" />
-            </IconButton>
-            <Typography variant="subtitle2" color="textSecondary">
-              {weekDays[0].toLocaleDateString()} - {weekDays[6].toLocaleDateString()}
-            </Typography>
-            <IconButton
-              size="small"
-              onClick={() => setWeekBaseDate(new Date(weekBaseDate.getFullYear(), weekBaseDate.getMonth(), weekBaseDate.getDate() + 7))}
-            >
-              <ChevronRightIcon fontSize="small" />
-            </IconButton>
-          </Box>
+         
         </Stack>
 
         {/* Responsive grid */}
@@ -420,7 +410,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
                         aspectRatio: '1',
                         p: 0.5,
                         backgroundColor: day ? '#fff' : '#f5f5f5',
-                        border: '1px solid #e0e0e0',
+                        border: '0.5px solid #e0e0e0',
                         overflow: 'auto',
                         maxHeight: '150px'
                       }}
@@ -489,7 +479,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
                   label={`Sport: ${capitalize(selectedEvent.game.sport || '')}`}
                   size="small"
                   color="primary"
-                  variant="outlined"
+                  
                 />
               </Box>
 
@@ -504,7 +494,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
               {selectedEvent.game.time && (
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <AccessTimeIcon fontSize="small" color="primary" />
-                  <Typography variant="body2">{selectedEvent.game.time}</Typography>
+                  <Typography variant="body2">{formatTimeTo12(selectedEvent.game.time)}</Typography>
                 </Box>
               )}
 
@@ -593,15 +583,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
               )}
             </>
           )}
-          {!selectedEvent?.isHosting && selectedEvent?.game.reservedByMe && selectedEvent?.game.type !== 'field' && (
-            <Button
-              onClick={handleCancelReservation}
-              color="error"
-              variant="contained"
-            >
-              Cancel Reservation
-            </Button>
-          )}
+         
         </DialogActions>
       </Dialog>
 

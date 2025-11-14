@@ -23,7 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Game } from '../types'
 import { useApp } from '../context/AppContext'
-import { capitalize } from '../utils'
+import { capitalize, formatTimeTo12 } from '../utils'
 import FieldReservationModal from './FieldReservationModal'
 
 interface BottomSheetDetailsProps {
@@ -127,7 +127,7 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
                 {game.time && (
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <AccessTimeIcon fontSize="small" color="primary" />
-                    <Typography variant="body2">{game.time}</Typography>
+                    <Typography variant="body2">{formatTimeTo12(game.time)}</Typography>
                   </Box>
                 )}
 
@@ -185,7 +185,7 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
                   {game.reservations.map(res => (
                     <ListItem key={res.id} dense>
                       <ListItemText
-                        primary={`${res.date} at ${res.time}`}
+                        primary={`${res.date} at ${formatTimeTo12(res.time)}`}
                         secondary={`${res.userName}${res.notes ? ` - ${res.notes}` : ''}`}
                       />
                     </ListItem>

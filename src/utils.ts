@@ -219,6 +219,21 @@ export async function fetchAddressSuggestions(
 
 export const DEFAULT_CENTER: LatLng = { lat: 35.2828, lng: -120.6596 };
 
+// Format a time string like "15:00" or "15:00:00" into 12-hour format "3:00 PM"
+export const formatTimeTo12 = (time?: string | null): string => {
+  if (!time) return ''
+  // Accept HH:MM or HH:MM:SS
+  const parts = time.split(':')
+  if (parts.length < 2) return time
+  const hh = parseInt(parts[0], 10)
+  const mm = parseInt(parts[1], 10)
+  if (isNaN(hh) || isNaN(mm)) return time
+  const period = hh >= 12 ? 'PM' : 'AM'
+  const hour = ((hh + 11) % 12) + 1 // convert 0-23 to 1-12
+  const minute = String(mm).padStart(2, '0')
+  return `${hour}:${minute} ${period}`
+}
+
 // Sample initial data
 export const SAMPLE_GAMES: Game[] = [
   {
