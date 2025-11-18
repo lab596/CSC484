@@ -440,7 +440,7 @@ export default function CalendarView({ games, profile }: CalendarViewProps) {
                                 )
                               })}
                               
-                              {dayEvents.length > 2 && (
+                              {dayEvents.length > 2 && dateStr && (
                                 <Button
                                   size="small"
                                   onClick={() => openDayDetails(dateStr)}

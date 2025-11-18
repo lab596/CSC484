@@ -13,6 +13,8 @@ export default function MapPage() {
   const { games, friends, profile, initialized } = useApp()
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null)
   const [openAddModal, setOpenAddModal] = useState(false)
+  const [editGameModalOpen, setEditGameModalOpen] = useState(false)
+  const [editingGame, setEditingGame] = useState<Game | null>(null)
   const [filters, setFilters] = useState<Filters>({
     type: 'all',
     sports: [],
@@ -22,6 +24,16 @@ export default function MapPage() {
 
   // Get friend names for the filter panel
   const friendNames = useMemo(() => friends.map(f => f.name), [friends])
+
+  const handleEditGame = (game: Game) => {
+    setEditingGame(game)
+    setEditGameModalOpen(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setEditGameModalOpen(false)
+    setEditingGame(null)
+  }
 
   // Apply filters to games
   const filteredGames = useMemo(() => {
@@ -118,11 +130,19 @@ export default function MapPage() {
         onClose={() => setOpenAddModal(false)}
       />
 
+      {/* Edit Game Modal */}
+      <AddGameModal
+        open={editGameModalOpen}
+        onClose={handleCloseEditModal}
+        editingGame={editingGame || undefined}
+      />
+
       {/* Bottom Sheet - Game Details */}
       {selectedGame && (
         <BottomSheetDetails 
           game={selectedGame}
           onClose={() => setSelectedGameId(null)}
+          onEditGame={handleEditGame}
         />
       )}
     </Box>

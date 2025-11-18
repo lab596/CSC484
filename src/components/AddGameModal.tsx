@@ -21,10 +21,11 @@ import AddressAutocomplete from './AddressAutocomplete'
 interface AddGameModalProps {
   open: boolean
   onClose: () => void
+  editingGame?: Game | null
 }
 
-export default function AddGameModal({ open, onClose }: AddGameModalProps) {
-  const { addGame, profile } = useApp()
+export default function AddGameModal({ open, onClose, editingGame }: AddGameModalProps) {
+  const { addGame, profile, updateGame } = useApp()
   const [itemType, setItemType] = useState<'game' | 'field'>('game')
   const [title, setTitle] = useState('')
   const [sport, setSport] = useState('')
@@ -37,6 +38,34 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   const [loading, setLoading] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [showValidation, setShowValidation] = useState(false)
+
+  // Initialize form with editing game data
+  React.useEffect(() => {
+    if (editingGame) {
+      setItemType(editingGame.type)
+      setTitle(editingGame.title)
+      setSport(editingGame.sport)
+      setDate(editingGame.date || todayOffset(0))
+      setTime(editingGame.time || '10:00')
+      setSkill(editingGame.skill || 'Intermediate')
+      setAddress(editingGame.address)
+      setSelectedLat(editingGame.lat)
+      setSelectedLng(editingGame.lng)
+    } else {
+      // Reset form for new game
+      setItemType('game')
+      setTitle('')
+      setSport('')
+      setDate(todayOffset(0))
+      setTime('10:00')
+      setSkill('Intermediate')
+      setAddress('')
+      setSelectedLat(null)
+      setSelectedLng(null)
+    }
+    setIsDirty(false)
+  }, [editingGame, open])
 
   const handleAddressSelect = (lat: number, lng: number) => {
     setSelectedLat(lat)
@@ -55,6 +84,8 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
     setSelectedLat(null)
     setSelectedLng(null)
     setIsDirty(false)
+    setShowValidation(false)
+    setToast(null)
     onClose()
   }
 
@@ -64,12 +95,14 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
 
   const handleSubmit = async () => {
     if (!title || !address || !sport) {
+      setShowValidation(true)
       showToast('Please fill in all required fields', 'error')
       return
     }
 
     // For fields, date and skill are optional
     if (itemType === 'game' && !date) {
+      setShowValidation(true)
       showToast('Please select a date for the game', 'error')
       return
     }
@@ -91,23 +124,32 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
       }
 
       const newGame: Game = {
-        id: 'g' + Date.now(),
+        id: editingGame?.id || ('g' + Date.now()),
         title,
-        sport,
-        address,
-        lat,
-        lng,
+        sport: editingGame?.sport || sport, // Keep original sport if editing
+        address: editingGame?.address || address, // Keep original address if editing
+        lat: editingGame?.lat || lat,
+        lng: editingGame?.lng || lng,
         date: itemType === 'game' ? date : undefined,
         time: itemType === 'game' ? time : undefined,
         skill: itemType === 'game' ? skill : undefined,
-        host: profile?.name || 'You',
+        host: editingGame?.host || profile?.name || 'You',
         type: itemType,
-        attendees: itemType === 'game' ? 1 : 0,
-        reservedByMe: itemType === 'game'
+        attendees: editingGame?.attendees || (itemType === 'game' ? 1 : 0),
+        reservedByMe: editingGame?.reservedByMe ?? (itemType === 'game'),
+        friendHost: editingGame?.friendHost,
+        reservations: editingGame?.reservations
       }
 
-      addGame(newGame)
-      showToast(`${itemType === 'game' ? 'Game' : 'Field'} created successfully!`, 'success')
+      if (editingGame) {
+        // Update existing game
+        updateGame(editingGame.id, newGame)
+        showToast(`${itemType === 'game' ? 'Game' : 'Field'} updated successfully!`, 'success')
+      } else {
+        // Create new game
+        addGame(newGame)
+        showToast(`${itemType === 'game' ? 'Game' : 'Field'} created successfully!`, 'success')
+      }
       handleClose()
     } catch (error) {
       console.error('Error creating game:', error)
@@ -120,7 +162,9 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
   return (
     <>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>Create {itemType === 'game' ? 'Game' : 'Field'}</DialogTitle>
+        <DialogTitle>
+          {editingGame ? 'Edit' : 'Create'} {itemType === 'game' ? 'Game' : 'Field'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
             <TextField
@@ -146,10 +190,17 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
                 setIsDirty(true)
               }}
               placeholder={itemType === 'game' ? 'e.g., Pickup Soccer at City Park' : 'e.g., Downtown Basketball Court'}
+              error={showValidation && !title}
+              helperText={showValidation && !title ? 'Required field' : ''}
+              InputLabelProps={{ 
+                required: true,
+                sx: { '&.MuiInputLabel-asterisk': { color: '#d32f2f' } }
+              }}
             />
 
             <Autocomplete
               freeSolo
+              disabled={!!editingGame}
               options={COMMON_SPORTS}
               value={sport || ''}
               onChange={(e, value) => {
@@ -166,6 +217,12 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
                   {...params}
                   label="Sport"
                   placeholder="e.g., Soccer, Basketball, Custom Sport..."
+                  helperText={editingGame ? 'Cannot change sport when editing' : (showValidation && !sport ? 'Required field' : '')}
+                  error={showValidation && !sport}
+                  required
+                  InputLabelProps={{ 
+                    sx: { '&.MuiInputLabel-asterisk': { color: '#d32f2f' } }
+                  }}
                 />
               )}
             />
@@ -221,6 +278,8 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
                 setIsDirty(true)
               }}
               onSelect={handleAddressSelect}
+              disabled={!!editingGame}
+              error={showValidation && !address}
             />
           </Box>
         </DialogContent>
@@ -233,7 +292,7 @@ export default function AddGameModal({ open, onClose }: AddGameModalProps) {
             variant="contained" 
             disabled={!title || !address || !sport || loading}
           >
-            {loading ? 'Creating...' : `Create ${itemType === 'game' ? 'Game' : 'Field'}`}
+            {loading ? (editingGame ? 'Updating...' : 'Creating...') : `${editingGame ? 'Edit' : 'Create'} ${itemType === 'game' ? 'Game' : 'Field'}`}
           </Button>
         </DialogActions>
       </Dialog>
