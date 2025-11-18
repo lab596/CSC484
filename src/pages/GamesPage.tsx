@@ -8,7 +8,6 @@ import {
   Tab,
   Tabs,
   Paper,
-  Chip,
   Stack,
   Dialog,
   DialogTitle,
@@ -21,12 +20,12 @@ import {
   Grid
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
-import EventIcon from '@mui/icons-material/Event'
-import PersonIcon from '@mui/icons-material/Person'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
 import { capitalize, formatTimeTo12 } from '../utils'
 import CalendarView from '../components/CalendarView'
+import GameInfoDisplay from '../components/GameInfoDisplay'
+import AddGameModal from '../components/AddGameModal'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -56,6 +55,8 @@ export default function GamesPage() {
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null)
   const [cancelReservationOpen, setCancelReservationOpen] = useState(false)
   const [reservationToCancel, setReservationToCancel] = useState<Game | null>(null)
+  const [editGameModalOpen, setEditGameModalOpen] = useState(false)
+  const [editingGame, setEditingGame] = useState<Game | null>(null)
 
 
   // Games hosted by me
@@ -98,6 +99,16 @@ const handleConfirmCancelReservation = () => {
 
   setCancelReservationOpen(false)
   setReservationToCancel(null)
+}
+
+const handleEditGame = (game: Game) => {
+  setEditingGame(game)
+  setEditGameModalOpen(true)
+}
+
+const handleCloseEditModal = () => {
+  setEditGameModalOpen(false)
+  setEditingGame(null)
 }
 
   // Games I'm attending: games I've reserved OR am hosting
@@ -197,31 +208,22 @@ const handleConfirmCancelReservation = () => {
             {hostedGames.map(game => (
               <Card key={game.id} sx={{ mb: 2 }}>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" sx={{ mb: 1 }}>
-                        {game.title}
-                      </Typography>
-                      <Stack direction="row" gap={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-                        <Chip
-                          icon={<EventIcon />}
-                          label={game.date || 'No date'}
-                          size="small"
-                          variant="outlined"
-                        />
-                        {game.time && (
-                          <Chip label={formatTimeTo12(game.time)} size="small" variant="outlined" />
-                        )}
-                        <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" />
-                        <Chip label={`${game.attendees} attendees`} size="small" variant="outlined" />
-                      </Stack>
-                      <Typography variant="body2" color="textSecondary">
-                        {game.address}
-                      </Typography>
-                    </Box>
-                  </Box>
+                  <Typography variant="h6" sx={{ mb: 1.5 }}>
+                    {game.title}
+                  </Typography>
+                  
+                  {/* Unified Info Display */}
+                  <GameInfoDisplay game={game} compact={false} />
                 </CardContent>
                 <CardActions>
+                  <Button
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    onClick={() => handleEditGame(game)}
+                  >
+                    Edit
+                  </Button>
                   <Button
                     size="small"
                     color="error"
@@ -266,37 +268,29 @@ const handleConfirmCancelReservation = () => {
                       <CardContent sx={{ pb: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                           <Box sx={{ flex: 1 }}>
-                            <Typography variant="h6" sx={{ mb: 0.5 }}>
+                            <Typography variant="h6" sx={{ mb: 1.5 }}>
                               {game.title}
                             </Typography>
-                            <Stack direction="row" gap={1} sx={{ mb: 1, flexWrap: 'wrap' }}>
-                              <Chip label={`Sport: ${capitalize(game.sport)}`} size="small" color="primary" />
-                              {game.time && (
-                                <Chip label={`${formatTimeTo12(game.time)}`} size="small" variant="outlined" />
-                              )}
-                              {game.skill && (
-                                <Chip label={`Level: ${capitalize(game.skill)}`} size="small" variant="outlined" />
-                              )}
-                            </Stack>
-                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mb: 0.5 }}>
-                              <PersonIcon sx={{ fontSize: 16, color: 'textSecondary' }} />
-                              <Typography variant="body2" color="textSecondary">
-                                Hosted by {game.host}
-                              </Typography>
-                            </Box>
-                            <Typography variant="body2" color="textSecondary">
-                              {game.address}
-                            </Typography>
+                            
+                            {/* Unified Info Display */}
+                            <GameInfoDisplay game={game} compact={false} />
                           </Box>
                           {game.reservedByMe && (
-                            <Stack direction="row" alignItems="center" gap={1}>
-                              <Chip
-                                label="Attending"
-                                color="success"
-                                size="small"
-                                sx={{ ml: 1 }}
-                              />
-                            </Stack>
+                            <Box sx={{ ml: 1 }}>
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  backgroundColor: '#4CAF50',
+                                  color: '#fff',
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: '4px',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                Attending
+                              </Typography>
+                            </Box>
                           )}
                         </Box>
                       </CardContent>
@@ -369,30 +363,36 @@ const handleConfirmCancelReservation = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog
-  open={cancelReservationOpen}
-  onClose={() => setCancelReservationOpen(false)}
->
-  <DialogTitle>Cancel Reservation</DialogTitle>
-  <DialogContent>
-    <Typography sx={{ mt: 2 }}>
-      Cancel your reservation for "{reservationToCancel?.title}"?
-    </Typography>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setCancelReservationOpen(false)}>
-      Keep Reservation
-    </Button>
-    <Button
-      onClick={handleConfirmCancelReservation}
-      color="error"
-      variant="contained"
-    >
-      Cancel Reservation
-    </Button>
-  </DialogActions>
-</Dialog>
 
+      <Dialog
+        open={cancelReservationOpen}
+        onClose={() => setCancelReservationOpen(false)}
+      >
+        <DialogTitle>Cancel Reservation</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 2 }}>
+            Cancel your reservation for "{reservationToCancel?.title}"?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelReservationOpen(false)}>
+            Keep Reservation
+          </Button>
+          <Button
+            onClick={handleConfirmCancelReservation}
+            color="error"
+            variant="contained"
+          >
+            Cancel Reservation
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <AddGameModal
+        open={editGameModalOpen}
+        onClose={handleCloseEditModal}
+        editingGame={editingGame}
+      />
     </Box>
   )
 }

@@ -67,15 +67,14 @@ export default function MapComponent({ games, selectedGameId, onSelectGame }: Ma
       })
 
       const marker = L.marker([game.lat, game.lng], { icon: svgIcon })
-        .bindPopup(game.title)
         .on('click', () => onSelectGame(game.id))
-        .addTo(map.current)
+        .addTo(map.current!)
 
       markersRef.current[game.id] = marker
 
       // Highlight selected marker
       if (game.id === selectedGameId) {
-        marker.openPopup()
+        // Popup removed - using bottom sheet instead
       }
     })
   }, [games, selectedGameId, onSelectGame])

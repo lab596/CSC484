@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  Chip,
   Stack,
   Divider,
   Paper,
@@ -13,25 +12,22 @@ import {
   ListItemText
 } from '@mui/material'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
-import EventIcon from '@mui/icons-material/Event'
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter'
-import PersonIcon from '@mui/icons-material/Person'
-import GroupIcon from '@mui/icons-material/Group'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Game } from '../types'
 import { useApp } from '../context/AppContext'
-import { capitalize, formatTimeTo12 } from '../utils'
+import { formatTimeTo12 } from '../utils'
 import FieldReservationModal from './FieldReservationModal'
+import GameInfoDisplay from './GameInfoDisplay'
 
 interface BottomSheetDetailsProps {
   game: Game
   onClose: () => void
+  onEditGame?: (game: Game) => void
 }
 
-export default function BottomSheetDetails({ game, onClose }: BottomSheetDetailsProps) {
+export default function BottomSheetDetails({ game, onClose, onEditGame }: BottomSheetDetailsProps) {
   const { updateGame, profile } = useApp()
   const [isMinimized, setIsMinimized] = useState(false)
   const [showReservationModal, setShowReservationModal] = useState(false)
@@ -102,76 +98,8 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
           <>
             {/* Game Details */}
             <Paper sx={{ p: 2, mb: 2, backgroundColor: '#f5f5f5' }}>
-              <Stack spacing={1.5}>
-                {game.sport && (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                      Sport:
-                    </Typography>
-                    <Chip
-                      label={capitalize(game.sport)}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </Box>
-                )}
-
-                {game.date && (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <EventIcon fontSize="small" color="primary" />
-                    <Typography variant="body2">{game.date}</Typography>
-                  </Box>
-                )}
-
-                {game.time && (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <AccessTimeIcon fontSize="small" color="primary" />
-                    <Typography variant="body2">{formatTimeTo12(game.time)}</Typography>
-                  </Box>
-                )}
-
-                {game.skill && (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <FitnessCenterIcon fontSize="small" color="primary" />
-                    <Typography variant="body2">
-                      Skill: <strong>{capitalize(game.skill)}</strong>
-                    </Typography>
-                  </Box>
-                )}
-
-                {game.host && (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <PersonIcon fontSize="small" color="primary" />
-                    <Typography variant="body2">
-                      Host: <strong>{capitalize(game.host)}</strong>
-                    </Typography>
-                  </Box>
-                )}
-
-                {game.attendees && (
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <GroupIcon fontSize="small" color="primary" />
-                    <Typography variant="body2">
-                      Attendees: <strong>{game.attendees}</strong>
-                    </Typography>
-                  </Box>
-                )}
-              </Stack>
+              <GameInfoDisplay game={game} />
             </Paper>
-
-            {/* Location */}
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                <LocationOnIcon fontSize="small" color="primary" sx={{ mt: 0.5 }} />
-                <Box>
-                  <Typography variant="caption" color="textSecondary">
-                    Location
-                  </Typography>
-                  <Typography variant="body2">{game.address}</Typography>
-                </Box>
-              </Box>
-            </Box>
 
             <Divider sx={{ my: 2 }} />
 
@@ -220,6 +148,19 @@ export default function BottomSheetDetails({ game, onClose }: BottomSheetDetails
               </Stack>
             ) : (
               <Stack direction="row" gap={1}>
+                {profile?.name === game.host && onEditGame && (
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    onClick={() => {
+                      onEditGame(game)
+                      onClose()
+                    }}
+                  >
+                    Edit
+                  </Button>
+                )}
                 <Button
                   variant="contained"
                   color={game.reservedByMe ? 'error' : 'success'}

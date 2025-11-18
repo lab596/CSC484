@@ -16,6 +16,8 @@ interface AddressAutocompleteProps {
   value: string
   onChange: (value: string) => void
   onSelect: (lat: number, lng: number) => void
+  disabled?: boolean
+  error?: boolean
 }
 
 // Debounce helper
@@ -33,7 +35,9 @@ function debounce<T extends (...args: any[]) => any>(
 export default function AddressAutocomplete({
   value,
   onChange,
-  onSelect
+  onSelect,
+  disabled = false,
+  error = false
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
   const [loading, setLoading] = useState(false)
@@ -123,12 +127,19 @@ export default function AddressAutocomplete({
       <Box ref={textFieldRef} sx={{ position: 'relative' }}>
         <TextField
           fullWidth
+          disabled={disabled}
           label="Address"
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="e.g., City Park, SLO"
           autoComplete="off"
+          error={error}
+          helperText={disabled ? 'Cannot change location when editing' : (error ? 'Required field' : '')}
+          required
+          InputLabelProps={{ 
+            sx: { '&.MuiInputLabel-asterisk': { color: '#d32f2f' } }
+          }}
         />
       </Box>
 
