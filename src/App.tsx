@@ -259,7 +259,7 @@ function AppContent() {
           <BottomNavigation
             value={currentPage}
             onChange={(e, value) => setCurrentPage(value as PageType)}
-            showLabels={false}
+            showLabels={true}
             sx={{
               display: 'flex',
               justifyContent: 'center',

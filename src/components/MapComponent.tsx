@@ -71,12 +71,15 @@ export default function MapComponent({ games, selectedGameId, onSelectGame }: Ma
         .addTo(map.current!)
 
       markersRef.current[game.id] = marker
-
-      // Highlight selected marker
-      if (game.id === selectedGameId) {
-        // Popup removed - using bottom sheet instead
-      }
     })
+
+    // Center map on selected game with animation
+    if (selectedGameId) {
+      const selectedGame = games.find(g => g.id === selectedGameId)
+      if (selectedGame && selectedGame.lat && selectedGame.lng) {
+        map.current.setView([selectedGame.lat, selectedGame.lng], 16, { animate: true, duration: 0.5 })
+      }
+    }
   }, [games, selectedGameId, onSelectGame])
 
   return (

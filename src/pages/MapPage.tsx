@@ -35,6 +35,11 @@ export default function MapPage() {
     setEditingGame(null)
   }
 
+  const handleGameCreated = (gameId: string) => {
+    // Select the newly created game to show it in the bottom sheet
+    setSelectedGameId(gameId)
+  }
+
   // Apply filters to games
   const filteredGames = useMemo(() => {
     return games.filter(game => {
@@ -128,6 +133,7 @@ export default function MapPage() {
       <AddGameModal 
         open={openAddModal}
         onClose={() => setOpenAddModal(false)}
+        onGameCreated={handleGameCreated}
       />
 
       {/* Edit Game Modal */}

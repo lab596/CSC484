@@ -9,9 +9,11 @@ import {
   Stack,
   Typography,
   Divider,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material'
 import TuneIcon from '@mui/icons-material/Tune'
+import FilterListIcon from '@mui/icons-material/FilterList'
 import { COMMON_SPORTS } from '../utils'
 
 export interface Filters {
@@ -102,6 +104,21 @@ export default function FilterPanel({
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', height: 48 }}>
+        {/* Filter Icon with Tooltip */}
+        <Tooltip title="Filter activities" placement="right">
+          <Box 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              px: 1.5,
+              color: '#999'
+            }}
+          >
+            <FilterListIcon sx={{ fontSize: 20 }} />
+          </Box>
+        </Tooltip>
+
         {/* Main Quick Filter Buttons */}
         <Button
           onClick={() => handleTypeChange('all')}

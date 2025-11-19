@@ -22,9 +22,10 @@ interface AddGameModalProps {
   open: boolean
   onClose: () => void
   editingGame?: Game | null
+  onGameCreated?: (gameId: string) => void
 }
 
-export default function AddGameModal({ open, onClose, editingGame }: AddGameModalProps) {
+export default function AddGameModal({ open, onClose, editingGame, onGameCreated }: AddGameModalProps) {
   const { addGame, profile, updateGame } = useApp()
   const [itemType, setItemType] = useState<'game' | 'field'>('game')
   const [title, setTitle] = useState('')
@@ -149,6 +150,10 @@ export default function AddGameModal({ open, onClose, editingGame }: AddGameModa
         // Create new game
         addGame(newGame)
         showToast(`${itemType === 'game' ? 'Game' : 'Field'} created successfully!`, 'success')
+        // Notify parent component about the new game
+        if (onGameCreated) {
+          onGameCreated(newGame.id)
+        }
       }
       handleClose()
     } catch (error) {
@@ -183,7 +188,7 @@ export default function AddGameModal({ open, onClose, editingGame }: AddGameModa
 
             <TextField
               fullWidth
-              label={itemType === 'game' ? 'Game Title' : 'Field Name'}
+              label={<span>{itemType === 'game' ? 'Game Title' : 'Field Name'} <span style={{ color: '#d32f2f' }}>*</span></span>}
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value)
@@ -193,8 +198,7 @@ export default function AddGameModal({ open, onClose, editingGame }: AddGameModa
               error={showValidation && !title}
               helperText={showValidation && !title ? 'Required field' : ''}
               InputLabelProps={{ 
-                required: true,
-                sx: { '&.MuiInputLabel-asterisk': { color: '#d32f2f' } }
+                sx: { whiteSpace: 'normal' }
               }}
             />
 
@@ -215,13 +219,12 @@ export default function AddGameModal({ open, onClose, editingGame }: AddGameModa
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Sport"
+                  label={<span>Sport <span style={{ color: '#d32f2f' }}>*</span></span>}
                   placeholder="e.g., Soccer, Basketball, Custom Sport..."
                   helperText={editingGame ? 'Cannot change sport when editing' : (showValidation && !sport ? 'Required field' : '')}
                   error={showValidation && !sport}
-                  required
                   InputLabelProps={{ 
-                    sx: { '&.MuiInputLabel-asterisk': { color: '#d32f2f' } }
+                    sx: { whiteSpace: 'normal' }
                   }}
                 />
               )}
@@ -291,6 +294,12 @@ export default function AddGameModal({ open, onClose, editingGame }: AddGameModa
             onClick={handleSubmit} 
             variant="contained" 
             disabled={!title || !address || !sport || loading}
+            sx={{
+              cursor: (!title || !address || !sport || loading) ? 'not-allowed' : 'pointer',
+              '&:disabled': {
+                cursor: 'not-allowed'
+              }
+            }}
           >
             {loading ? (editingGame ? 'Updating...' : 'Creating...') : `${editingGame ? 'Edit' : 'Create'} ${itemType === 'game' ? 'Game' : 'Field'}`}
           </Button>

@@ -128,7 +128,7 @@ export default function AddressAutocomplete({
         <TextField
           fullWidth
           disabled={disabled}
-          label="Address"
+          label={<span>Address <span style={{ color: '#d32f2f' }}>*</span></span>}
           value={value}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -136,9 +136,8 @@ export default function AddressAutocomplete({
           autoComplete="off"
           error={error}
           helperText={disabled ? 'Cannot change location when editing' : (error ? 'Required field' : '')}
-          required
           InputLabelProps={{ 
-            sx: { '&.MuiInputLabel-asterisk': { color: '#d32f2f' } }
+            sx: { whiteSpace: 'normal' }
           }}
         />
       </Box>
