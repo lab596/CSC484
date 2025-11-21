@@ -10,7 +10,9 @@ import {
   Typography,
   Divider,
   IconButton,
-  Tooltip
+  Tooltip,
+  type SxProps,
+  type Theme
 } from '@mui/material'
 import TuneIcon from '@mui/icons-material/Tune'
 import FilterListIcon from '@mui/icons-material/FilterList'
@@ -27,12 +29,14 @@ interface FilterPanelProps {
   filters: Filters
   onFiltersChange: (filters: Filters) => void
   friendNames: string[]
+  sx?: SxProps<Theme>
 }
 
 export default function FilterPanel({
   filters,
   onFiltersChange,
-  friendNames
+  friendNames,
+  sx
 }: FilterPanelProps) {
   const [advancedAnchor, setAdvancedAnchor] = useState<HTMLButtonElement | null>(null)
   const advancedOpen = Boolean(advancedAnchor)
@@ -100,24 +104,35 @@ export default function FilterPanel({
         backgroundColor: 'white',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         borderRadius: 1,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        ...(sx || {})
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', height: 48 }}>
-        {/* Filter Icon with Tooltip */}
         <Tooltip title="Filter activities" placement="right">
-          <Box 
+          <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               px: 1.5,
-              color: '#999'
+              gap: 0.5,
+              color: '#444'
             }}
           >
-            <FilterListIcon sx={{ fontSize: 20 }} />
+            <FilterListIcon sx={{ fontSize: 18 }} />
+            <Typography
+              variant="subtitle2"
+              sx={{
+                
+                letterSpacing: 0.25
+              }}
+            >
+              Filters
+            </Typography>
           </Box>
         </Tooltip>
+
+        <Divider orientation="vertical" sx={{ height: '100%' }} />
 
         {/* Main Quick Filter Buttons */}
         <Button
@@ -134,11 +149,11 @@ export default function FilterPanel({
             fontWeight: filters.type === 'all' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
-        >
-          All
-        </Button>
+          >
+            All
+          </Button>
 
-        <Button
+          <Button
           onClick={() => handleTypeChange('games')}
           variant={filters.type === 'games' ? 'contained' : 'text'}
           size="small"
@@ -152,11 +167,11 @@ export default function FilterPanel({
             fontWeight: filters.type === 'games' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
-        >
-          Games
-        </Button>
+          >
+            Games
+          </Button>
 
-        <Button
+          <Button
           onClick={() => handleTypeChange('fields')}
           variant={filters.type === 'fields' ? 'contained' : 'text'}
           size="small"
@@ -170,11 +185,11 @@ export default function FilterPanel({
             fontWeight: filters.type === 'fields' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
-        >
-          Fields
-        </Button>
+          >
+            Fields
+          </Button>
 
-        <Button
+          <Button
           onClick={() => handleTypeChange('friends')}
           variant={filters.type === 'friends' ? 'contained' : 'text'}
           size="small"
@@ -188,15 +203,15 @@ export default function FilterPanel({
             fontWeight: filters.type === 'friends' ? 'bold' : 'normal',
             fontSize: '0.9rem'
           }}
-        >
-          Friends
-        </Button>
+          >
+            Friends
+          </Button>
 
-        {/* Divider */}
-        <Divider orientation="vertical" sx={{ height: '100%' }} />
+          {/* Divider */}
+          <Divider orientation="vertical" sx={{ height: '100%' }} />
 
-        {/* Advanced Filter Button */}
-        <IconButton
+          {/* Advanced Filter Button */}
+          <IconButton
           onClick={handleAdvancedOpen}
           size="small"
           sx={{
@@ -209,22 +224,22 @@ export default function FilterPanel({
             color: hasAdvancedFilters ? '#1976d2' : 'inherit'
           }}
           title="Advanced filters"
-        >
-          <TuneIcon sx={{ fontSize: 20 }} />
-          {hasAdvancedFilters && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 4,
-                right: 4,
-                width: 6,
-                height: 6,
-                backgroundColor: '#1976d2',
-                borderRadius: '50%'
-              }}
-            />
-          )}
-        </IconButton>
+          >
+            <TuneIcon sx={{ fontSize: 20 }} />
+            {hasAdvancedFilters && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  width: 6,
+                  height: 6,
+                  backgroundColor: '#1976d2',
+                  borderRadius: '50%'
+                }}
+              />
+            )}
+          </IconButton>
       </Box>
 
       {/* Advanced Filters Popover - Horizontal Layout */}
