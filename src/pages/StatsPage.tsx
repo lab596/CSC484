@@ -403,6 +403,7 @@ export default function StatsPage() {
   const [editedMetrics, setEditedMetrics] = useState<Record<string, string>>({})
   const [readoutDialogOpen, setReadoutDialogOpen] = useState(false)
   const [statToReadout, setStatToReadout] = useState<Stats | null>(null)
+  const [highlightedErrors, setHighlightedErrors] = useState<Set<string>>(new Set())
 
   if (!initialized) {
     return <Box sx={{ p: 2 }}>Loading...</Box>
@@ -540,8 +541,29 @@ export default function StatsPage() {
   }
 
   const handleSaveStats = () => {
-    if (!selectedGame || !note.trim()) {
-      alert('Select a game you attended and enter notes.')
+    const errors = new Set<string>()
+    
+    if (!selectedGame) {
+      errors.add('game')
+    }
+    
+    if (isCompetitiveSport(selectedGame?.sport || '') && !result) {
+      errors.add('result')
+    }
+
+    if (errors.size > 0) {
+      setHighlightedErrors(errors)
+      
+      // Scroll to first error field
+      if (errors.has('game')) {
+        const gameField = document.querySelector('[data-test-id="game-select"]')
+        gameField?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else if (errors.has('result')) {
+        const resultField = document.querySelector('[data-test-id="result-select"]')
+        resultField?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+      
+      setTimeout(() => setHighlightedErrors(new Set()), 600)
       return
     }
 
@@ -567,12 +589,12 @@ export default function StatsPage() {
 
     const stat: Stats = {
       id: 's' + Date.now(),
-      gameId: selectedGame.id,
-      gameTitle: selectedGame.title,
-      sport: selectedGame.sport,
+      gameId: selectedGame!.id,
+      gameTitle: selectedGame!.title,
+      sport: selectedGame!.sport,
       result: (result as 'W' | 'L' | 'D' | undefined) || undefined,
       performanceRating,
-      note: note.trim(),
+      note: note.trim() || undefined as any,
       time: Date.now(),
       rebounds: typeof metricsToPersist.rebounds === 'number' ? metricsToPersist.rebounds : undefined,
       threePointers: typeof metricsToPersist.threePointers === 'number' ? metricsToPersist.threePointers : undefined,
@@ -950,32 +972,51 @@ export default function StatsPage() {
                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
                       Performance Metrics
                     </Typography>
-                    <Stack spacing={1.5}>
-                      {sportData.metrics
-                        .filter(metric => metric.id !== 'energyLevel')
-                        .slice(0, 8)
-                        .map(metric => {
-                        const avgVal = metric.count > 0 ? metric.total / metric.count : 0
-                        const maxPossible = Math.max(100, metric.total)
-                        const percentage = (avgVal / maxPossible) * 100
-                        
-                        return (
-                          <Box key={metric.id}>
-                            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                              <Typography variant="body2">{metric.label}</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                {metric.count > 1 ? `${avgVal.toFixed(1)} avg` : metric.total}
-                              </Typography>
-                            </Stack>
-                            <LinearProgress
-                              variant="determinate"
-                              value={Math.min(percentage, 100)}
-                              sx={{ height: 6, borderRadius: '4px' }}
-                            />
-                          </Box>
-                        )
-                      })}
-                    </Stack>
+                    {sportData.metrics.filter(metric => metric.id !== 'energyLevel').length === 0 ? (
+                      <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic', fontSize: '0.9rem' }}>
+                        Nothing to see here...
+                      </Typography>
+                    ) : (
+                      <Stack spacing={1.5}>
+                        {sportData.metrics
+                          .filter(metric => metric.id !== 'energyLevel')
+                          .slice(0, 8)
+                          .map(metric => {
+                          const avgVal = metric.count > 0 ? metric.total / metric.count : 0
+                          const minVal = 0
+                          const maxVal = metric.total
+                          const percentage = maxVal > 0 ? (avgVal / maxVal) * 100 : 0
+                          
+                          return (
+                            <Box key={metric.id}>
+                              <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                                <Typography variant="body2">{metric.label}</Typography>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', minWidth: '60px', textAlign: 'right' }}>
+                                    {avgVal.toFixed(1)}{metric.count > 1 ? ' avg' : ''}
+                                  </Typography>
+                                </Stack>
+                              </Stack>
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#999', minWidth: '24px' }}>
+                                  {minVal}
+                                </Typography>
+                                <Box sx={{ flex: 1 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={Math.min(percentage, 100)}
+                                    sx={{ height: 8, borderRadius: '4px', backgroundColor: '#e0e0e0' }}
+                                  />
+                                </Box>
+                                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#999', minWidth: '24px', textAlign: 'right' }}>
+                                  {Math.round(maxVal)}
+                                </Typography>
+                              </Stack>
+                            </Box>
+                          )
+                        })}
+                      </Stack>
+                    )}
                   </Box>
                 </>
               )}
@@ -1009,7 +1050,16 @@ export default function StatsPage() {
                 label={attendedGames.length === 0 ? 'No attended games available' : 'Select Game'}
                 value={selectedGameId}
                 onChange={(e) => setSelectedGameId(e.target.value)}
-                sx={{ mb: 2 }}
+                data-test-id="game-select"
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    ...(highlightedErrors.has('game') && {
+                      borderColor: '#d32f2f !important',
+                      boxShadow: '0 0 0 2px rgba(211, 47, 47, 0.5)'
+                    })
+                  }
+                }}
                 disabled={attendedGames.length === 0}
               >
                 {attendedGames.map(game => (
@@ -1019,27 +1069,60 @@ export default function StatsPage() {
                 ))}
               </TextField>
 
-              {selectedGame && (
+            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Select Game
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                *
+              </Typography>
+            </Box>
+
+            {selectedGame && (
                 <Stack spacing={2} sx={{ mb: 3 }}>
                   {['basketball', 'soccer', 'tennis', 'baseball', 'volleyball'].includes(sportKey) && (
-                    <TextField
-                      select
-                      fullWidth
-                      label="Result"
-                      value={result}
-                      onChange={(e) => setResult(e.target.value as 'W' | 'L' | 'D')}
-                    >
-                      <MenuItem value="W">Win</MenuItem>
-                      <MenuItem value="L">Loss</MenuItem>
-                      <MenuItem value="D">Draw</MenuItem>
-                    </TextField>
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Result
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                          *
+                        </Typography>
+                      </Box>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Select Result"
+                        value={result}
+                        onChange={(e) => setResult(e.target.value as 'W' | 'L' | 'D')}
+                        data-test-id="result-select"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            ...(highlightedErrors.has('result') && {
+                              borderColor: '#d32f2f !important',
+                              boxShadow: '0 0 0 2px rgba(211, 47, 47, 0.5)'
+                            })
+                          }
+                        }}
+                      >
+                        <MenuItem value="W">Win</MenuItem>
+                        <MenuItem value="L">Loss</MenuItem>
+                        <MenuItem value="D">Draw</MenuItem>
+                      </TextField>
+                    </Box>
                   )}
 
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" color="textSecondary">
-                        Performance Rating (1-10)
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
+                          Performance Rating (1-10)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                          *
+                        </Typography>
+                      </Box>
                       <Slider
                         value={performanceRating}
                         onChange={(_, value) => setPerformanceRating(value as number)}
@@ -1047,12 +1130,14 @@ export default function StatsPage() {
                         max={10}
                         step={1}
                         valueLabelDisplay="auto"
-                        sx={{ mt: 1 }}
                       />
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" color="textSecondary">
+                      <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         Energy Level (1-10)
+                        <Typography variant="caption" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                          *
+                        </Typography>
                       </Typography>
                       <Slider
                         value={energyLevel}
@@ -1068,7 +1153,7 @@ export default function StatsPage() {
 
                   <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      {selectedGame.sport ? `${humanize(selectedGame.sport)} Metrics` : 'Sport Metrics'}
+                      {selectedGame?.sport ? `${humanize(selectedGame.sport)} Metrics` : 'Sport Metrics'}
                     </Typography>
                     <Grid container spacing={2}>
                       {metricDefinitions.map(definition => (
@@ -1097,8 +1182,15 @@ export default function StatsPage() {
                   variant="contained"
                   endIcon={<SaveIcon />}
                   onClick={handleSaveStats}
-                  disabled={!selectedGame || !note.trim() || (isCompetitiveSport(selectedGame?.sport || '') && !result)}
                   fullWidth
+                  sx={{
+                    opacity: (!selectedGame || (isCompetitiveSport(selectedGame?.sport || '') && !result)) ? 0.6 : 1,
+                    cursor: (!selectedGame || (isCompetitiveSport(selectedGame?.sport || '') && !result)) ? 'not-allowed' : 'pointer',
+                    backgroundColor: (!selectedGame || (isCompetitiveSport(selectedGame?.sport || '') && !result)) ? '#999999' : '#1976d2',
+                    '&:hover': {
+                      backgroundColor: (!selectedGame || (isCompetitiveSport(selectedGame?.sport || '') && !result)) ? '#999999' : '#1565c0'
+                    }
+                  }}
                 >
                   Save Stats Entry
                 </Button>
@@ -1135,10 +1227,7 @@ export default function StatsPage() {
                     borderRadius: '8px',
                     padding: 2,
                     marginBottom: 1,
-                    backgroundColor: '#fafafa',
-                    '&:hover': {
-                      backgroundColor: '#f5f5f5'
-                    }
+                    backgroundColor: '#fafafa'
                   }}
                 >
                   <ListItemText
@@ -1359,9 +1448,6 @@ export default function StatsPage() {
                           borderRadius: '8px',
                           padding: 1.5,
                           backgroundColor: '#fafafa',
-                          '&:hover': {
-                            backgroundColor: '#f5f5f5'
-                          },
                           display: 'flex',
                           flexDirection: 'column'
                         }}
