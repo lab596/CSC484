@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react'
-import { Box, Button } from '@mui/material'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Box, Button, Divider, IconButton, Paper } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import 'leaflet/dist/leaflet.css'
 import { useApp } from '../context/AppContext'
 import { Game } from '../types'
-import MapComponent from '../components/MapComponent'
+import MapComponent, { type MapComponentHandle } from '../components/MapComponent'
 import AddGameModal from '../components/AddGameModal'
 import BottomSheetDetails from '../components/BottomSheetDetails'
 import FilterPanel, { Filters } from '../components/FilterPanel'
@@ -85,6 +85,10 @@ export default function MapPage() {
   }, [games, friends, filters])
 
   const selectedGame = games.find(g => g.id === selectedGameId)
+  const mapRef = useRef<MapComponentHandle>(null)
+
+  const handleZoomIn = () => mapRef.current?.zoomIn()
+  const handleZoomOut = () => mapRef.current?.zoomOut()
 
   if (!initialized) {
     return <Box sx={{ p: 2 }}>Loading...</Box>
@@ -95,38 +99,95 @@ export default function MapPage() {
       {/* Map Component - fills entire space */}
       <Box sx={{ flex: 1, position: 'relative', width: '100%' }}>
         <MapComponent 
+          ref={mapRef}
           games={filteredGames}
           selectedGameId={selectedGameId}
           onSelectGame={setSelectedGameId}
         />
       </Box>
 
-      {/* Filter Panel - Top Left */}
-      <FilterPanel
-        filters={filters}
-        onFiltersChange={setFilters}
-        friendNames={friendNames}
-      />
-
-      {/* Add Activity Button - Top Right */}
+      {/* Top Controls Row */}
       <Box
         sx={{
           position: 'absolute',
           top: 16,
+          left: 16,
           right: 16,
-          zIndex: 500,
-          pointerEvents: 'auto'
+          display: 'flex',
+          gap: 2,
+          alignItems: 'stretch',
+          zIndex: 600,
+          pointerEvents: 'none'
         }}
       >
-        <Button 
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenAddModal(true)}
-          sx={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
+        <Paper
+          elevation={3}
+          sx={{
+            width: 56,
+            height: 48,
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: 1,
+            overflow: 'hidden',
+            border: '1px solid rgba(0,0,0,0.1)',
+            pointerEvents: 'auto'
+          }}
         >
-          Add Activity
-        </Button>
+          <IconButton
+            size="small"
+            onClick={handleZoomIn}
+            sx={{
+              flex: 1,
+              borderRadius: 0,
+              fontWeight: 600,
+              height: 24,
+              py: 0
+            }}
+          >
+            +
+          </IconButton>
+          <Divider />
+          <IconButton
+            size="small"
+            onClick={handleZoomOut}
+            sx={{
+              flex: 1,
+              borderRadius: 0,
+              fontWeight: 600,
+              height: 24,
+              py: 0,
+              fontSize: '1.1rem',
+              letterSpacing: 1
+            }}
+          >
+            -
+          </IconButton>
+        </Paper>
+
+        <Box sx={{ pointerEvents: 'auto' }}>
+          <FilterPanel
+            filters={filters}
+            onFiltersChange={setFilters}
+            friendNames={friendNames}
+            sx={{
+              position: 'relative',
+              top: 'auto',
+              left: 'auto'
+            }}
+          />
+        </Box>
+
+        <Box sx={{ pointerEvents: 'auto', marginLeft: 'auto' }}>
+          <Button 
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenAddModal(true)}
+            sx={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', height: 48 }}
+          >
+            Add Activity
+          </Button>
+        </Box>
       </Box>
 
       {/* Add Activity Modal */}

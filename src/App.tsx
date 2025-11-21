@@ -15,7 +15,8 @@ import {
   Chip,
   Dialog,
   TextField,
-  Button
+  Button,
+  IconButton
 } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer'
@@ -23,6 +24,8 @@ import BarChartIcon from '@mui/icons-material/BarChart'
 import PeopleIcon from '@mui/icons-material/People'
 import PersonIcon from '@mui/icons-material/Person'
 import EditIcon from '@mui/icons-material/Edit'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import CloseIcon from '@mui/icons-material/Close'
 import { AppProvider } from './context/AppContext'
 import MapPage from './pages/MapPage'
 import GamesPage from './pages/GamesPage'
@@ -68,6 +71,7 @@ function AppContent() {
   })
   const [editingField, setEditingField] = useState<'name' | 'username' | null>(null)
   const [tempValue, setTempValue] = useState('')
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const renderPage = () => {
     switch (currentPage) {
@@ -233,6 +237,28 @@ function AppContent() {
         </Box>
       )}
 
+      {/* Floating Help Button */}
+      <IconButton
+        color="primary"
+        onClick={() => setHelpOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 96,
+          left: 24,
+          zIndex: 1100,
+          backgroundColor: '#fff',
+          border: '1px solid #e0e0e0',
+          boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
+          width: 60,
+          height: 60,
+          '&:hover': {
+            backgroundColor: '#f5f5f5'
+          }
+        }}
+      >
+        <HelpOutlineIcon sx={{ fontSize: '1.8rem' }} />
+      </IconButton>
+
       {/* Bottom Navigation */}
       <Paper sx={{ borderTop: '1px solid #e0e0e0' }} elevation={3}>
         <Box
@@ -347,6 +373,65 @@ function AppContent() {
             >
               Save
             </Button>
+          </Stack>
+        </Box>
+      </Dialog>
+      {/* Global Help Dialog */}
+      <Dialog
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        PaperProps={{ sx: { borderRadius: 2, maxWidth: 500 } }}
+      >
+        <Box sx={{ p: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Help & FAQs
+            </Typography>
+            <IconButton onClick={() => setHelpOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            Quick tips on how to navigate and use the app.
+          </Typography>
+
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Map Page
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Use the filters at the top to narrow down activities. Click on map pins to view details or edit them. The Add Activity button lets you create new games or fields.
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Games Page
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Browse upcoming games, check who’s attending, edit hosted games, and cancel reservations.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Stats & Tracking
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Track your recent performance, follow trends, and log how each session went to stay on top of your goals.
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Friends & Social
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Connect with friends and see what they're up to.
+              </Typography>
+            </Box>
+
+            
           </Stack>
         </Box>
       </Dialog>

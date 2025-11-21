@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { Box } from '@mui/material'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -11,6 +11,11 @@ interface MapComponentProps {
   onSelectGame: (id: string) => void
 }
 
+export interface MapComponentHandle {
+  zoomIn: () => void
+  zoomOut: () => void
+}
+
 // Fix Leaflet's default icon path
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -21,7 +26,10 @@ L.Icon.Default.mergeOptions({
 
 const DEFAULT_CENTER = [35.2828, -120.6596] as [number, number]
 
-export default function MapComponent({ games, selectedGameId, onSelectGame }: MapComponentProps) {
+const MapComponent = forwardRef<MapComponentHandle, MapComponentProps>(function MapComponent(
+  { games, selectedGameId, onSelectGame },
+  ref
+) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const markersRef = useRef<{ [key: string]: L.Marker }>({})
@@ -30,7 +38,7 @@ export default function MapComponent({ games, selectedGameId, onSelectGame }: Ma
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
-    map.current = L.map(mapContainer.current).setView(DEFAULT_CENTER, 13)
+    map.current = L.map(mapContainer.current, { zoomControl: false }).setView(DEFAULT_CENTER, 13)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -82,6 +90,19 @@ export default function MapComponent({ games, selectedGameId, onSelectGame }: Ma
     }
   }, [games, selectedGameId, onSelectGame])
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoomIn: () => {
+        map.current?.zoomIn()
+      },
+      zoomOut: () => {
+        map.current?.zoomOut()
+      }
+    }),
+    []
+  )
+
   return (
     <Box
       ref={mapContainer}
@@ -95,7 +116,9 @@ export default function MapComponent({ games, selectedGameId, onSelectGame }: Ma
       }}
     />
   )
-}
+})
+
+export default MapComponent
 
 // Sport emoji mapping
 function getSportEmoji(sport: string): string {
